@@ -411,7 +411,7 @@ class RedroomApp {
           </div>
 
           <div class="flex items-center justify-between text-xs dark:text-gray-400 text-slate-500 pt-2 border-t border-white/5">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-rose-500/70"></i> ${vid.views} views</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-rose-500/70"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
             <span>${vid.uploadDate}</span>
           </div>
         </div>
@@ -448,15 +448,24 @@ class RedroomApp {
     document.getElementById('playerTitle').textContent = video.title;
     document.getElementById('playerUploader').textContent = video.uploader;
     document.getElementById('playerUploaderAvatar').src = video.uploaderAvatar;
-    document.getElementById('playerViews').textContent = video.views + ' Views';
+    document.getElementById('playerViews').textContent = (video.viewCount || video.views || 0).toLocaleString() + ' Views';
     document.getElementById('playerUploadDate').textContent = video.uploadDate;
     document.getElementById('playerCategory').textContent = video.category || 'General';
     document.getElementById('playerDescription').textContent = video.description || 'Exclusive Redroom video stream.';
-    document.getElementById('playerLikeCount').textContent = (video.likes || 100).toLocaleString();
+    document.getElementById('playerLikeCount').textContent = (video.likes || 0).toLocaleString();
     document.getElementById('playerDislikeCount').textContent = (video.dislikes || 0).toLocaleString();
 
     this.renderRecommendedList();
     this.incrementSiteViews();
+
+    // Increment Video View Count in Firebase
+    try {
+      if (typeof db !== 'undefined') {
+        db.collection('videos').doc(video.id).update({
+          viewCount: firebase.firestore.FieldValue.increment(1)
+        });
+      }
+    } catch(e) {}
 
     setTimeout(() => {
       if (playerModal) {
@@ -495,31 +504,48 @@ class RedroomApp {
 
   toggleLike() {
     if (!this.currentVideo) return;
-    if (this.currentVideo.userReaction === 'like') {
-      this.currentVideo.likes--;
-      this.currentVideo.userReaction = null;
-    } else {
-      if (this.currentVideo.userReaction === 'dislike') this.currentVideo.dislikes--;
-      this.currentVideo.likes++;
-      this.currentVideo.userReaction = 'like';
-      this.showToast('Added to Liked Videos', 'info');
-    }
+    
+    // Check local storage to prevent spam likes
+    const likedVideos = JSON.parse(localStorage.getItem('redroom_liked') || '{}');
+    if (likedVideos[this.currentVideo.id] === 'like') return;
+
+    this.currentVideo.likes = (this.currentVideo.likes || 0) + 1;
+    likedVideos[this.currentVideo.id] = 'like';
+    localStorage.setItem('redroom_liked', JSON.stringify(likedVideos));
+
     document.getElementById('playerLikeCount').textContent = this.currentVideo.likes.toLocaleString();
-    document.getElementById('playerDislikeCount').textContent = this.currentVideo.dislikes.toLocaleString();
+    this.showToast('Added to Liked Videos', 'info');
+
+    // Sync to Firebase
+    try {
+      if (typeof db !== 'undefined') {
+        db.collection('videos').doc(this.currentVideo.id).update({
+          likes: firebase.firestore.FieldValue.increment(1)
+        });
+      }
+    } catch(e) {}
   }
 
   toggleDislike() {
     if (!this.currentVideo) return;
-    if (this.currentVideo.userReaction === 'dislike') {
-      this.currentVideo.dislikes--;
-      this.currentVideo.userReaction = null;
-    } else {
-      if (this.currentVideo.userReaction === 'like') this.currentVideo.likes--;
-      this.currentVideo.dislikes++;
-      this.currentVideo.userReaction = 'dislike';
-    }
-    document.getElementById('playerLikeCount').textContent = this.currentVideo.likes.toLocaleString();
+
+    const likedVideos = JSON.parse(localStorage.getItem('redroom_liked') || '{}');
+    if (likedVideos[this.currentVideo.id] === 'dislike') return;
+
+    this.currentVideo.dislikes = (this.currentVideo.dislikes || 0) + 1;
+    likedVideos[this.currentVideo.id] = 'dislike';
+    localStorage.setItem('redroom_liked', JSON.stringify(likedVideos));
+
     document.getElementById('playerDislikeCount').textContent = this.currentVideo.dislikes.toLocaleString();
+
+    // Sync to Firebase
+    try {
+      if (typeof db !== 'undefined') {
+        db.collection('videos').doc(this.currentVideo.id).update({
+          dislikes: firebase.firestore.FieldValue.increment(1)
+        });
+      }
+    } catch(e) {}
   }
 
   copyShareLink() {
