@@ -566,7 +566,10 @@
 
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">Cover Thumbnail URL</label>
-                <input type="text" id="playlistThumbnail" placeholder="https://... (leave empty to use first video thumbnail)" class="admin-input">
+                <input type="text" id="playlistThumbnail" oninput="updatePlaylistPreview()" placeholder="https://... (leave empty to use first video thumbnail)" class="admin-input">
+                <div id="playlistThumbnailPreviewContainer" class="mt-2 hidden">
+                  <img id="playlistThumbnailPreview" src="" class="w-full h-32 object-cover rounded-lg bg-slate-900 border border-slate-800">
+                </div>
               </div>
 
               <!-- Video Picker Checklist -->

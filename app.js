@@ -251,6 +251,22 @@ class RedroomApp {
     return cleanUrl;
   }
 
+  formatTimeAgo(timestamp, fallback) {
+    if (!timestamp) return fallback || 'Just now';
+    const diff = Date.now() - timestamp;
+    if (diff < 5 * 60 * 1000) return 'Just now';
+    const date = new Date(timestamp);
+    const dStr = date.toLocaleDateString();
+    const tStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    return `${dStr} ${tStr}`;
+  }
+
+  isNewVideo(timestamp) {
+    if (!timestamp) return false;
+    const diff = Date.now() - timestamp;
+    return diff <= 48 * 60 * 60 * 1000;
+  }
+
   checkAgeGate() {
     const ageModal = document.getElementById('ageGateModal');
     const isVerified = localStorage.getItem('redroom_age_verified');
@@ -330,7 +346,7 @@ class RedroomApp {
     if (title) title.textContent = topVideo.title;
     if (desc) desc.textContent = topVideo.description || 'The most watched video on Redroom right now.';
     if (rating) rating.textContent = topVideo.rating || 98;
-    if (views) views.textContent = topVideo.views || topVideo.viewCount || '0';
+    if (views) views.textContent = (topVideo.viewCount || topVideo.views || 0).toLocaleString();
     if (duration) duration.textContent = topVideo.duration || '15:00';
     if (uploader) uploader.textContent = topVideo.uploader || 'Redroom Admin';
     if (catBadge) {
@@ -338,8 +354,10 @@ class RedroomApp {
     }
 
     // Show hero if not searching
-    if (!this.searchQuery && this.currentCategory === 'All') {
+    if (!this.searchQuery && this.currentCategory === 'All' && !this.activePlaylist) {
       heroSection.classList.remove('hidden');
+    } else {
+      heroSection.classList.add('hidden');
     }
   }
 
@@ -350,7 +368,7 @@ class RedroomApp {
 
     // Hero banner: only show when videos exist AND not searching/filtering
     if (heroSection) {
-      if (this.videos.length === 0 || this.searchQuery || this.currentCategory !== 'All') {
+      if (this.videos.length === 0 || this.searchQuery || this.currentCategory !== 'All' || this.activePlaylist) {
         heroSection.classList.add('hidden');
       } else {
         heroSection.classList.remove('hidden');
@@ -415,8 +433,14 @@ class RedroomApp {
           <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80'">
           
           <div class="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md uppercase tracking-wider">
-            ${vid.quality || 'HD'}
+            ${vid.category || 'General'}
           </div>
+
+          ${this.isNewVideo(vid.createdAt) ? `
+          <div class="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 bg-rose-600/90 backdrop-blur-md border border-rose-400 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md uppercase tracking-wider shadow-lg shadow-rose-600/30">
+            NEW
+          </div>
+          ` : ''}
 
           <div class="absolute bottom-1.5 sm:bottom-3 right-1.5 sm:right-3 bg-black/80 backdrop-blur-md text-gray-200 text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-md border border-white/10">
             ${vid.duration || '15:00'}
@@ -438,7 +462,7 @@ class RedroomApp {
 
           <div class="flex items-center justify-between text-[9px] sm:text-xs dark:text-gray-400 text-slate-500 pt-1.5 sm:pt-2 border-t border-white/5">
             <span class="flex items-center gap-1"><i class="fa-solid fa-eye text-rose-500/70 text-[8px] sm:text-xs"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()}</span>
-            <span class="hidden sm:inline">${vid.uploadDate}</span>
+            <span class="hidden sm:inline">${this.formatTimeAgo(vid.createdAt, vid.uploadDate)}</span>
           </div>
         </div>
       </div>
@@ -533,7 +557,7 @@ class RedroomApp {
     document.getElementById('playerUploader').textContent = video.uploader;
     document.getElementById('playerUploaderAvatar').src = video.uploaderAvatar;
     document.getElementById('playerViews').textContent = (video.viewCount || video.views || 0).toLocaleString() + ' Views';
-    document.getElementById('playerUploadDate').textContent = video.uploadDate;
+    document.getElementById('playerUploadDate').textContent = this.formatTimeAgo(video.createdAt, video.uploadDate);
     document.getElementById('playerCategory').textContent = video.category || 'General';
     document.getElementById('playerDescription').textContent = video.description || 'Exclusive Redroom video stream.';
     document.getElementById('playerLikeCount').textContent = (video.likes || 0).toLocaleString();
@@ -702,10 +726,20 @@ class RedroomApp {
       searchInput.addEventListener('input', (e) => {
         this.searchQuery = e.target.value.trim();
         this.currentPage = 1;
+        this.currentPlaylistPage = 1; // Reset playlist pagination on search
         if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
         this.renderVideoGrid();
+        this.renderPlaylists();
       });
     }
+
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.view === 'playlist') {
+        this.openPlaylist(e.state.id, true);
+      } else if (this.activePlaylist) {
+        this.exitPlaylistView(true);
+      }
+    });
 
     const heroWatchBtn = document.getElementById('heroWatchBtn');
     if (heroWatchBtn) {
@@ -738,14 +772,25 @@ class RedroomApp {
     if (!section || !container) return;
 
     // Only show playlists that have at least 1 video
-    const activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+    let activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      activePlaylists = activePlaylists.filter(pl => 
+        pl.name.toLowerCase().includes(q) || 
+        (pl.description && pl.description.toLowerCase().includes(q))
+      );
+    }
 
     if (activePlaylists.length === 0) {
       section.classList.add('hidden');
       return;
     }
 
-    section.classList.remove('hidden');
+    if (!this.activePlaylist) {
+      section.classList.remove('hidden');
+    }
+    
     if (countEl) countEl.textContent = `${activePlaylists.length} playlist${activePlaylists.length !== 1 ? 's' : ''}`;
 
     const totalPages = Math.ceil(activePlaylists.length / this.playlistsPerPage);
@@ -886,19 +931,24 @@ class RedroomApp {
           <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
           <div class="absolute top-1.5 left-1.5 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
-            ${vid.quality || 'HD'}
+            ${vid.category || 'General'}
           </div>
+          ${this.isNewVideo(vid.createdAt) ? `
+          <div class="absolute top-1.5 right-1.5 bg-rose-600/90 backdrop-blur-md border border-rose-400 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg">
+            NEW
+          </div>
+          ` : ''}
           <div class="absolute bottom-1.5 right-1.5 bg-black/80 text-gray-200 text-[9px] font-semibold px-1.5 py-0.5 rounded border border-white/10">
             ${vid.duration || '15:00'}
           </div>
-          <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div class="w-7 h-7 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
-              <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-10 h-10 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-play text-sm ml-0.5"></i>
             </div>
           </div>
         </div>
         <h3 class="mt-1.5 text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${vid.title}</h3>
-        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
+        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(vid.viewCount || vid.views || 0).toLocaleString()} views • ${this.formatTimeAgo(vid.createdAt, vid.uploadDate)}</span>
       </div>
     `).join('');
 
@@ -914,7 +964,7 @@ class RedroomApp {
     }
   }
 
-  openPlaylist(playlistId) {
+  openPlaylist(playlistId, fromHistory = false) {
     const playlist = this.playlists.find(p => p.id === playlistId);
     if (!playlist) return;
 
@@ -923,6 +973,10 @@ class RedroomApp {
     this.currentCategory = 'All';
     this.searchQuery = '';
     this.currentPage = 1;
+
+    if (!fromHistory) {
+      history.pushState({ view: 'playlist', id: playlistId }, '', '#playlist-' + playlistId);
+    }
 
     // Update UI: hide hero, playlists section, main browse section; show playlist view
     const heroSection = document.getElementById('heroSection');
@@ -948,9 +1002,17 @@ class RedroomApp {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  exitPlaylistView() {
+  exitPlaylistView(fromHistory = false) {
     this.activePlaylist = null;
     this.playlistVideoIndex = 0;
+
+    if (!fromHistory) {
+      if (history.state && history.state.view === 'playlist') {
+        history.back();
+      } else {
+        history.replaceState(null, '', window.location.pathname);
+      }
+    }
 
     // Restore UI
     const mainBrowse = document.getElementById('mainBrowseSection');

@@ -571,6 +571,21 @@ function updateAddPreview() {
   }
 }
 
+function updatePlaylistPreview() {
+  let thumb = document.getElementById('playlistThumbnail').value.trim();
+  const container = document.getElementById('playlistThumbnailPreviewContainer');
+  const img = document.getElementById('playlistThumbnailPreview');
+  
+  if (!thumb) {
+    if (container) container.classList.add('hidden');
+    return;
+  }
+  
+  thumb = formatThumbnailUrl(thumb);
+  if (img) img.src = thumb;
+  if (container) container.classList.remove('hidden');
+}
+
 function handlePublishVideo(e) {
   e.preventDefault();
   const title = document.getElementById('addTitle').value.trim();
