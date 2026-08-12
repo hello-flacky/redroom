@@ -20,11 +20,18 @@ const INITIAL_VIDEOS = [];
 class RedroomApp {
   constructor() {
     this.videos = [];
+    this.playlists = [];
     this.categories = [...DEFAULT_CATEGORIES];
     this.siteViews = this.loadSiteViews();
     this.currentCategory = 'All';
     this.searchQuery = '';
     this.currentVideo = null;
+    this.activePlaylist = null; // Currently viewing playlist
+    this.playlistVideoIndex = 0; // Current index in playlist playback
+    this.currentPage = 1;
+    this.itemsPerPage = 20;
+    this.currentPlaylistPage = 1;
+    this.playlistsPerPage = 5;
     this.init();
     this.fetchDataFromFirebase();
   }
@@ -63,10 +70,21 @@ class RedroomApp {
       this.videos = vids.sort((a, b) => b.createdAt - a.createdAt);
       this.renderHeroSection();
       this.renderVideoGrid();
+      this.renderPlaylists(); // Re-render playlists when videos change (for thumbnails)
       this.hideLoader();
     }, (error) => {
       console.error('Error fetching videos:', error);
       this.hideLoader();
+    });
+
+    // Fetch Playlists Real-time
+    db.collection('playlists').onSnapshot(snapshot => {
+      const pls = [];
+      snapshot.forEach(doc => {
+        pls.push({ id: doc.id, ...doc.data() });
+      });
+      this.playlists = pls.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      this.renderPlaylists();
     });
 
     // Sync Global Site Views
@@ -140,20 +158,11 @@ class RedroomApp {
       this.renderVideoGrid();
       this.incrementSiteViews();
       this.setupEventListeners();
-      this.setupMonetagAd();
       this.hideLoader();
     }, 300);
   }
 
-  setupMonetagAd() {
-    document.body.addEventListener('click', () => {
-      const now = Date.now();
-      if (now - lastAdClickTime > AD_COOLDOWN_MS) {
-        lastAdClickTime = now;
-        window.open(MONETAG_DIRECT_LINK, '_blank');
-      }
-    });
-  }
+
 
   logoutUser() {
     localStorage.removeItem('redroom_user_logged_in');
@@ -199,6 +208,11 @@ class RedroomApp {
       } else {
         icon.className = 'fa-solid fa-moon text-rose-500 theme-toggle-icon';
       }
+    }
+    // Sync mobile bottom nav theme icon
+    const mobileIcon = document.getElementById('mobileThemeIcon');
+    if (mobileIcon) {
+      mobileIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     }
   }
 
@@ -268,6 +282,7 @@ class RedroomApp {
   setCategory(category) {
     this.showLoader(`Loading ${category} Videos...`);
     this.currentCategory = category;
+    this.currentPage = 1;
     this.renderCategoryPills();
     setTimeout(() => {
       this.renderVideoGrid();
@@ -345,6 +360,11 @@ class RedroomApp {
     if (!grid) return;
 
     let filtered = this.videos.filter(vid => {
+      // If viewing a playlist, only show videos in that playlist
+      if (this.activePlaylist) {
+        const plVideoIds = this.activePlaylist.videoIds || [];
+        if (!plVideoIds.includes(vid.id)) return false;
+      }
       const matchesCat = (this.currentCategory === 'All') || (vid.category === this.currentCategory);
       const matchesSearch = !this.searchQuery || 
         vid.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
@@ -353,70 +373,134 @@ class RedroomApp {
       return matchesCat && matchesSearch;
     });
 
-    if (resultCount) {
-      resultCount.textContent = `Showing ${filtered.length} Videos`;
+    // If in playlist view, sort by playlist order
+    if (this.activePlaylist) {
+      const orderMap = {};
+      (this.activePlaylist.videoIds || []).forEach((id, idx) => orderMap[id] = idx);
+      filtered.sort((a, b) => (orderMap[a.id] || 0) - (orderMap[b.id] || 0));
     }
 
-    if (filtered.length === 0) {
+    // Pagination logic
+    const totalVideos = filtered.length;
+    const totalPages = Math.ceil(totalVideos / this.itemsPerPage);
+    
+    if (this.currentPage > totalPages && totalPages > 0) {
+        this.currentPage = totalPages;
+    }
+    
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedVideos = filtered.slice(startIndex, endIndex);
+
+    if (resultCount) {
+      resultCount.textContent = `Showing ${paginatedVideos.length} of ${totalVideos} Videos`;
+    }
+
+    if (paginatedVideos.length === 0) {
       grid.innerHTML = `
         <div class="col-span-full py-20 text-center glass-card rounded-3xl p-10 border border-rose-900/30">
           <div class="w-20 h-20 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-500 inline-flex items-center justify-center mb-4 shadow-lg shadow-rose-600/30 animate-pulse">
             <i class="fa-solid fa-film text-3xl"></i>
           </div>
-          <h3 class="text-2xl font-black dark:text-gray-100 text-slate-800 mb-2 tracking-tight">No Redroom Videos Uploaded Yet</h3>
-          <p class="dark:text-gray-400 text-slate-500 text-sm max-w-md mx-auto mb-6">
-            ${this.searchQuery || this.currentCategory !== 'All' ? `No videos found matching "${this.searchQuery || this.currentCategory}".` : 'The admin has not published any videos yet. Log in to the Admin Panel (Password: 911) to publish Streamtape video links!'}
-          </p>
-          <a href="admin.html" class="btn-outline-red px-6 py-2.5 rounded-xl text-xs font-bold inline-flex items-center gap-2">
-            <i class="fa-solid fa-user-shield"></i> Go to Admin Panel
-          </a>
+          <h3 class="text-2xl font-black dark:text-gray-100 text-slate-800 tracking-tight">No Videos</h3>
         </div>
       `;
+      this.renderPagination(totalPages);
       return;
     }
 
-    grid.innerHTML = filtered.map(vid => `
-      <div class="glass-card rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
+    grid.innerHTML = paginatedVideos.map(vid => `
+      <div class="glass-card rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
         <div class="thumb-container relative aspect-video bg-black/80">
           <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80'">
           
-          <div class="absolute top-3 left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+          <div class="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md uppercase tracking-wider">
             ${vid.quality || 'HD'}
           </div>
 
-          <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-gray-200 text-xs font-semibold px-2 py-1 rounded-md border border-white/10">
+          <div class="absolute bottom-1.5 sm:bottom-3 right-1.5 sm:right-3 bg-black/80 backdrop-blur-md text-gray-200 text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-md border border-white/10">
             ${vid.duration || '15:00'}
           </div>
 
-          <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1">
-            <i class="fa-solid fa-star text-[10px]"></i> ${vid.rating || 98}%
-          </div>
-
           <div class="play-overlay absolute inset-0 bg-gradient-to-t from-red-950/90 via-black/40 to-transparent flex items-center justify-center">
-            <div class="w-14 h-14 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/50 transform group-hover:scale-110 transition-transform duration-300">
-              <i class="fa-solid fa-play text-xl ml-1"></i>
+            <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/50 transform group-hover:scale-110 transition-transform duration-300">
+              <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
             </div>
           </div>
         </div>
 
-        <div class="p-4 flex-1 flex flex-col justify-between">
+        <div class="p-2.5 sm:p-4 flex-1 flex flex-col justify-between">
           <div>
-            <h3 class="font-bold dark:text-gray-100 text-slate-800 text-base group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug mb-2">
+            <h3 class="font-bold dark:text-gray-100 text-slate-800 text-xs sm:text-base group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug mb-1 sm:mb-2">
               ${vid.title}
             </h3>
-            <div class="flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500 mb-3">
-              <img src="${vid.uploaderAvatar}" alt="${vid.uploader}" class="w-5 h-5 rounded-full object-cover border border-rose-500/30">
-              <span class="truncate">${vid.uploader}</span>
-            </div>
           </div>
 
-          <div class="flex items-center justify-between text-xs dark:text-gray-400 text-slate-500 pt-2 border-t border-white/5">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-rose-500/70"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
-            <span>${vid.uploadDate}</span>
+          <div class="flex items-center justify-between text-[9px] sm:text-xs dark:text-gray-400 text-slate-500 pt-1.5 sm:pt-2 border-t border-white/5">
+            <span class="flex items-center gap-1"><i class="fa-solid fa-eye text-rose-500/70 text-[8px] sm:text-xs"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()}</span>
+            <span class="hidden sm:inline">${vid.uploadDate}</span>
           </div>
         </div>
       </div>
     `).join('');
+    
+    this.renderPagination(totalPages);
+  }
+
+  renderPagination(totalPages) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="flex items-center gap-2 sm:gap-4 bg-slate-100 dark:bg-black/40 p-2 sm:p-3 rounded-full border border-slate-300 dark:border-rose-900/30 shadow-lg">
+        <button onclick="window.app.changePage(${this.currentPage - 1})" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-slate-200 disabled:dark:hover:bg-white/5 disabled:hover:text-slate-700 disabled:dark:hover:text-gray-300 cursor-pointer disabled:cursor-not-allowed" ${this.currentPage === 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-left text-xs sm:text-sm"></i>
+        </button>
+        
+        <span class="text-xs sm:text-sm font-semibold dark:text-gray-200 text-slate-700 px-2 sm:px-4">
+          Page <span class="text-rose-500 font-black">${this.currentPage}</span> of ${totalPages}
+        </span>
+        
+        <button onclick="window.app.changePage(${this.currentPage + 1})" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-slate-200 disabled:dark:hover:bg-white/5 disabled:hover:text-slate-700 disabled:dark:hover:text-gray-300 cursor-pointer disabled:cursor-not-allowed" ${this.currentPage === totalPages ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-right text-xs sm:text-sm"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  changePage(newPage) {
+    this.currentPage = newPage;
+    this.renderVideoGrid();
+    
+    const gridEl = document.getElementById('mainBrowseSection');
+    if (gridEl) {
+      gridEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  parseStreamtapeUrl(inputUrl) {
+    if (!inputUrl) return '';
+    let cleanUrl = inputUrl.trim();
+    if (cleanUrl.includes('<iframe')) {
+      const match = cleanUrl.match(/src=["']([^"']+)["']/i);
+      if (match && match[1]) cleanUrl = match[1];
+    }
+    const stMatch = cleanUrl.match(/streamtape\.[a-z]+\/(?:v|e)\/([a-zA-Z0-9_\-]+)/i);
+    if (stMatch && stMatch[1]) {
+      return `https://streamtape.com/e/${stMatch[1]}/`;
+    }
+    if (cleanUrl.includes('/v/')) {
+      cleanUrl = cleanUrl.replace('/v/', '/e/');
+    }
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+    return cleanUrl;
   }
 
   openPlayer(videoId) {
@@ -489,17 +573,8 @@ class RedroomApp {
 
   downloadVideo() {
     if (!this.currentVideo) return;
-    
-    if (!firstDownloadClicked) {
-      // First click: Open direct link
-      firstDownloadClicked = true;
-      this.showToast('Preparing download...', 'info');
-      window.open(MONETAG_DIRECT_LINK, '_blank');
-    } else {
-      // Subsequent click: actual download (open streamtape link)
-      this.showToast('Starting Streamtape Video Download...', 'success');
-      window.open(this.currentVideo.streamtapeUrl, '_blank');
-    }
+    this.showToast('Starting Streamtape Video Download...', 'success');
+    window.open(this.currentVideo.streamtapeUrl, '_blank');
   }
 
   toggleLike() {
@@ -562,17 +637,28 @@ class RedroomApp {
     const recList = document.getElementById('recommendedList');
     if (!recList || !this.currentVideo) return;
 
-    const recommended = this.videos.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
+    let recommended;
+    if (this.activePlaylist) {
+      // In playlist mode: show next videos in the playlist
+      const plVids = (this.activePlaylist.videoIds || [])
+        .map(id => this.videos.find(v => v.id === id))
+        .filter(Boolean);
+      const currentIdx = plVids.findIndex(v => v.id === this.currentVideo.id);
+      recommended = plVids.filter((v, i) => i !== currentIdx).slice(0, 4);
+    } else {
+      recommended = this.videos.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
+    }
+
     recList.innerHTML = recommended.map(v => `
-      <div class="flex gap-3 cursor-pointer group" onclick="window.app.openPlayer('${v.id}')">
-        <div class="w-28 aspect-video rounded-lg overflow-hidden relative bg-black shrink-0">
+      <div class="flex gap-2 sm:gap-3 cursor-pointer group" onclick="window.app.openPlayer('${v.id}')">
+        <div class="w-24 sm:w-28 aspect-video rounded-lg overflow-hidden relative bg-black shrink-0">
           <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
-          <span class="absolute bottom-1 right-1 text-[9px] bg-black/80 px-1 rounded text-gray-200 font-semibold">${v.duration || '15:00'}</span>
+          <span class="absolute bottom-1 right-1 text-[8px] sm:text-[9px] bg-black/80 px-1 rounded text-gray-200 font-semibold">${v.duration || '15:00'}</span>
         </div>
         <div class="flex-1 min-w-0">
-          <h4 class="text-xs font-semibold dark:text-gray-200 text-slate-800 group-hover:text-rose-400 line-clamp-2 leading-tight mb-1">${v.title}</h4>
-          <span class="text-[11px] text-gray-400 block truncate">${v.uploader}</span>
-          <span class="text-[10px] text-gray-500">${v.views} views</span>
+          <h4 class="text-[10px] sm:text-xs font-semibold dark:text-gray-200 text-slate-800 group-hover:text-rose-400 line-clamp-2 leading-tight mb-1">${v.title}</h4>
+          <span class="text-[10px] sm:text-[11px] text-gray-400 block truncate">${v.uploader}</span>
+          <span class="text-[9px] sm:text-[10px] text-gray-500">${v.views} views</span>
         </div>
       </div>
     `).join('');
@@ -615,6 +701,8 @@ class RedroomApp {
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         this.searchQuery = e.target.value.trim();
+        this.currentPage = 1;
+        if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
         this.renderVideoGrid();
       });
     }
@@ -637,6 +725,255 @@ class RedroomApp {
         this.closePlayer();
       }
     });
+  }
+
+  // ==============================
+  // PLAYLIST VIEWER METHODS
+  // ==============================
+
+  renderPlaylists() {
+    const section = document.getElementById('playlistsSection');
+    const container = document.getElementById('playlistCardsRow');
+    const countEl = document.getElementById('playlistTotalCount');
+    if (!section || !container) return;
+
+    // Only show playlists that have at least 1 video
+    const activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+
+    if (activePlaylists.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    if (countEl) countEl.textContent = `${activePlaylists.length} playlist${activePlaylists.length !== 1 ? 's' : ''}`;
+
+    const totalPages = Math.ceil(activePlaylists.length / this.playlistsPerPage);
+    if (this.currentPlaylistPage > totalPages && totalPages > 0) this.currentPlaylistPage = totalPages;
+    
+    const startIndex = (this.currentPlaylistPage - 1) * this.playlistsPerPage;
+    const paginatedPlaylists = activePlaylists.slice(startIndex, startIndex + this.playlistsPerPage);
+
+    container.innerHTML = paginatedPlaylists.map(pl => {
+      const vidCount = (pl.videoIds || []).length;
+      const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const thumbSrc = this.formatThumbnailUrl(rawThumb);
+
+      return `
+        <div class="flex-shrink-0 w-40 sm:w-52 cursor-pointer group" onclick="window.app.openPlaylist('${pl.id}')">
+          <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-2 left-2 right-2">
+              <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                <i class="fa-solid fa-layer-group text-[8px] sm:text-[10px]"></i> ${vidCount} videos
+              </span>
+            </div>
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+              </div>
+            </div>
+          </div>
+          <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors truncate">${pl.name}</h3>
+          <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate">${pl.description || vidCount + ' videos'}</p>
+        </div>
+      `;
+    }).join('');
+    
+    this.renderPlaylistPagination(totalPages);
+  }
+
+  renderPlaylistPagination(totalPages) {
+    const container = document.getElementById('playlistPaginationContainer');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="flex items-center gap-1 sm:gap-2 bg-slate-100 dark:bg-black/20 p-1.5 sm:p-2 rounded-full border border-slate-300 dark:border-white/5">
+        <button onclick="window.app.changePlaylistPage(${this.currentPlaylistPage - 1})" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed" ${this.currentPlaylistPage === 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-left text-[10px] sm:text-xs"></i>
+        </button>
+        <span class="text-[10px] sm:text-xs font-semibold dark:text-gray-400 text-slate-500 px-1 sm:px-2">
+          ${this.currentPlaylistPage} / ${totalPages}
+        </span>
+        <button onclick="window.app.changePlaylistPage(${this.currentPlaylistPage + 1})" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed" ${this.currentPlaylistPage === totalPages ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-right text-[10px] sm:text-xs"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  changePlaylistPage(newPage) {
+    this.currentPlaylistPage = newPage;
+    this.renderPlaylists();
+  }
+
+  openAllPlaylists() {
+    const modal = document.getElementById('allPlaylistsModal');
+    const grid = document.getElementById('allPlaylistsGrid');
+    if (!modal || !grid) return;
+    
+    const activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+    
+    grid.innerHTML = activePlaylists.map(pl => {
+      const vidCount = (pl.videoIds || []).length;
+      const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const thumbSrc = this.formatThumbnailUrl(rawThumb);
+
+      return `
+        <div class="cursor-pointer group flex flex-col h-full" onclick="window.app.closeAllPlaylists(); window.app.openPlaylist('${pl.id}')">
+          <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20 w-full">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-2 left-2 right-2">
+              <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                <i class="fa-solid fa-layer-group text-[8px] sm:text-[10px]"></i> ${vidCount} vids
+              </span>
+            </div>
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="w-8 h-8 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+              </div>
+            </div>
+          </div>
+          <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${pl.name}</h3>
+          <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${pl.description || vidCount + ' videos'}</p>
+        </div>
+      `;
+    }).join('');
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAllPlaylists() {
+    const modal = document.getElementById('allPlaylistsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  formatThumbnailUrl(url) {
+    if (!url) return url;
+    if (url.includes('imgur.com') && !url.includes('i.imgur.com') && !url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+      const parts = url.split('/');
+      let id = parts[parts.length - 1];
+      if (id.includes('?')) id = id.split('?')[0];
+      return `https://i.imgur.com/${id}.png`;
+    }
+    return url;
+  }
+
+  openAllVideos() {
+    const modal = document.getElementById('allVideosModal');
+    const grid = document.getElementById('allVideosGrid');
+    const countEl = document.getElementById('allVideosCount');
+    if (!modal || !grid) return;
+
+    if (countEl) countEl.textContent = `(${this.videos.length})`;
+
+    grid.innerHTML = this.videos.map(vid => `
+      <div class="cursor-pointer group flex flex-col" onclick="window.app.closeAllVideos(); window.app.openPlayer('${vid.id}')">
+        <div class="relative aspect-video rounded-xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg w-full">
+          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+          <div class="absolute top-1.5 left-1.5 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+            ${vid.quality || 'HD'}
+          </div>
+          <div class="absolute bottom-1.5 right-1.5 bg-black/80 text-gray-200 text-[9px] font-semibold px-1.5 py-0.5 rounded border border-white/10">
+            ${vid.duration || '15:00'}
+          </div>
+          <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-7 h-7 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+              <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+            </div>
+          </div>
+        </div>
+        <h3 class="mt-1.5 text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${vid.title}</h3>
+        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
+      </div>
+    `).join('');
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAllVideos() {
+    const modal = document.getElementById('allVideosModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  openPlaylist(playlistId) {
+    const playlist = this.playlists.find(p => p.id === playlistId);
+    if (!playlist) return;
+
+    this.activePlaylist = playlist;
+    this.playlistVideoIndex = 0;
+    this.currentCategory = 'All';
+    this.searchQuery = '';
+    this.currentPage = 1;
+
+    // Update UI: hide hero, playlists section, main browse section; show playlist view
+    const heroSection = document.getElementById('heroSection');
+    const playlistsSection = document.getElementById('playlistsSection');
+    const mainBrowse = document.getElementById('mainBrowseSection');
+    const playlistView = document.getElementById('playlistViewSection');
+
+    if (heroSection) heroSection.classList.add('hidden');
+    if (playlistsSection) playlistsSection.classList.add('hidden');
+    if (mainBrowse) mainBrowse.classList.add('hidden');
+    if (playlistView) playlistView.classList.remove('hidden');
+
+    // Populate playlist view info
+    const nameEl = document.getElementById('playlistViewName');
+    const descEl = document.getElementById('playlistViewDesc');
+    const countEl = document.getElementById('playlistViewCount');
+
+    if (nameEl) nameEl.textContent = playlist.name;
+    if (descEl) descEl.textContent = playlist.description || '';
+    if (countEl) countEl.textContent = `${(playlist.videoIds || []).length} videos`;
+
+    this.renderVideoGrid();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  exitPlaylistView() {
+    this.activePlaylist = null;
+    this.playlistVideoIndex = 0;
+
+    // Restore UI
+    const mainBrowse = document.getElementById('mainBrowseSection');
+    const playlistView = document.getElementById('playlistViewSection');
+
+    if (mainBrowse) mainBrowse.classList.remove('hidden');
+    if (playlistView) playlistView.classList.add('hidden');
+
+    this.renderHeroSection();
+    this.renderPlaylists();
+    this.renderCategoryPills();
+    this.renderVideoGrid();
+  }
+
+  playPlaylistAll() {
+    if (!this.activePlaylist) return;
+    const videoIds = this.activePlaylist.videoIds || [];
+    if (videoIds.length === 0) {
+      this.showToast('This playlist has no videos.', 'error');
+      return;
+    }
+    this.playlistVideoIndex = 0;
+    this.openPlayer(videoIds[0]);
   }
 }
 

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Redroom Admin Portal</title>
 
   <!-- Redroom SVG Favicon -->
@@ -143,6 +143,38 @@
       height: 100%;
       object-fit: cover;
     }
+    /* Admin Mobile Sidebar Drawer */
+    @media (max-width: 767px) {
+      .admin-sidebar-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 60;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: none;
+      }
+
+      .admin-sidebar-wrapper.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .admin-sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+      }
+
+      .admin-sidebar-backdrop.visible {
+        display: block;
+      }
+    }
   </style>
 </head>
 
@@ -177,8 +209,11 @@
   <!-- MAIN ADMIN DASHBOARD LAYOUT -->
   <div id="adminDashboardLayout" class="hidden flex-1 flex flex-col md:flex-row min-h-screen">
 
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="admin-sidebar-backdrop" onclick="closeSidebar()"></div>
+
     <!-- Left Navigation Sidebar -->
-    <aside class="w-full md:w-64 admin-sidebar flex flex-col shrink-0">
+    <aside id="adminSidebar" class="w-full md:w-64 admin-sidebar admin-sidebar-wrapper flex flex-col shrink-0">
       <div class="p-6 border-b border-slate-800 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded bg-rose-600 flex items-center justify-center text-white font-bold text-sm">
@@ -186,9 +221,15 @@
           </div>
           <span class="font-bold text-white tracking-wide">Redroom Admin</span>
         </div>
-        <a href="index.html" title="Go to Website" class="text-slate-400 hover:text-white text-xs">
-          <i class="fa-solid fa-external-link"></i>
-        </a>
+        <div class="flex items-center gap-2">
+          <a href="index.html" title="Go to Website" class="text-slate-400 hover:text-white text-xs">
+            <i class="fa-solid fa-external-link"></i>
+          </a>
+          <!-- Mobile close sidebar button -->
+          <button onclick="closeSidebar()" class="md:hidden text-slate-400 hover:text-white p-1">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Navigation Tabs -->
@@ -216,6 +257,12 @@
           <i class="fa-solid fa-list-check w-5"></i>
           <span>View All Videos</span>
         </button>
+
+        <button id="tabBtn-playlists" onclick="switchTab('playlists')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-layer-group w-5"></i>
+          <span>Playlists</span>
+        </button>
       </nav>
 
       <div class="p-4 border-t border-slate-800">
@@ -231,41 +278,43 @@
     <main class="flex-1 flex flex-col min-w-0 bg-slate-950">
 
       <!-- Top Bar -->
-      <header class="admin-header px-8 py-4 flex items-center justify-between">
-        <h1 id="pageTitle" class="text-lg font-bold text-white">System Statistics</h1>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
+      <header class="admin-header px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
+        <!-- Mobile menu button -->
+        <button onclick="openSidebar()" class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 transition-colors flex-shrink-0">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <h1 id="pageTitle" class="text-base sm:text-lg font-bold text-white truncate">System Statistics</h1>
+        <div class="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-400 flex-shrink-0">
           <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>System Online</span>
-          <span>•</span>
+          <span class="hidden sm:inline">System Online</span>
+          <span class="hidden sm:inline">•</span>
           <span>PW: 911</span>
         </div>
       </header>
 
       <!-- TAB 1: ADVANCED STATISTICS TAB -->
-      <section id="tabContent-stats" class="p-8 space-y-6">
+      <section id="tabContent-stats" class="p-4 sm:p-8 space-y-4 sm:space-y-6">
         <!-- Top Metric Cards Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="admin-stat-card p-5">
-            <span class="text-xs text-slate-400 uppercase font-semibold">Total Videos</span>
-            <div id="statTotalVideos" class="text-3xl font-bold text-white mt-2">0</div>
-            <span class="text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-arrow-up mr-1"></i> Active in
-              Database</span>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div class="admin-stat-card p-3 sm:p-5">
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Total Videos</span>
+            <div id="statTotalVideos" class="text-xl sm:text-3xl font-bold text-white mt-1 sm:mt-2">0</div>
+            <span class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-arrow-up mr-1"></i>Active</span>
           </div>
-          <div class="admin-stat-card p-5">
-            <span class="text-xs text-slate-400 uppercase font-semibold">Total Platform Views</span>
-            <div id="statTotalViews" class="text-3xl font-bold text-rose-500 mt-2">0</div>
-            <span class="text-[11px] text-slate-400 mt-1 block">Accumulated views</span>
+          <div class="admin-stat-card p-3 sm:p-5">
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Total Views</span>
+            <div id="statTotalViews" class="text-xl sm:text-3xl font-bold text-rose-500 mt-1 sm:mt-2">0</div>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 mt-1 block">Accumulated</span>
           </div>
-          <div class="admin-stat-card p-5">
-            <span class="text-xs text-slate-400 uppercase font-semibold">Streamtape Embed Health</span>
-            <div id="statEmbeds" class="text-3xl font-bold text-emerald-400 mt-2">100%</div>
-            <span class="text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-circle-check mr-1"></i> Player
-              Active</span>
+          <div class="admin-stat-card p-3 sm:p-5">
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Embed Health</span>
+            <div id="statEmbeds" class="text-xl sm:text-3xl font-bold text-emerald-400 mt-1 sm:mt-2">100%</div>
+            <span class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-circle-check mr-1"></i>Active</span>
           </div>
-          <div class="admin-stat-card p-5">
-            <span class="text-xs text-slate-400 uppercase font-semibold">Active Categories</span>
-            <div id="statCategories" class="text-3xl font-bold text-amber-400 mt-2">0</div>
-            <span class="text-[11px] text-slate-400 mt-1 block">Filters enabled</span>
+          <div class="admin-stat-card p-3 sm:p-5">
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Categories</span>
+            <div id="statCategories" class="text-xl sm:text-3xl font-bold text-amber-400 mt-1 sm:mt-2">0</div>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 mt-1 block">Filters enabled</span>
           </div>
         </div>
 
@@ -333,7 +382,7 @@
       </section>
 
       <!-- TAB 2: ADD VIDEO TAB (With Category Dropdown & 2-column Live Preview) -->
-      <section id="tabContent-add" class="p-8 hidden space-y-6">
+      <section id="tabContent-add" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
           <!-- Left Column: Input Form -->
@@ -427,7 +476,7 @@
       </section>
 
       <!-- TAB 3: CATEGORY MANAGER TAB -->
-      <section id="tabContent-categories" class="p-8 hidden space-y-6">
+      <section id="tabContent-categories" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
           <!-- Add Category Form -->
@@ -462,7 +511,7 @@
       </section>
 
       <!-- TAB 4: VIEW ALL VIDEOS TAB (Clicking any video row opens Statistics Drawer) -->
-      <section id="tabContent-view" class="p-8 hidden space-y-6">
+      <section id="tabContent-view" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
         <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
           <div class="p-4 border-b border-slate-800 flex items-center justify-between">
             <div>
@@ -489,6 +538,77 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: PLAYLIST MANAGER TAB -->
+      <section id="tabContent-playlists" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+
+          <!-- Left Column: Create / Edit Playlist Form -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 space-y-4">
+            <h2 id="playlistFormTitle" class="text-base font-bold text-white pb-3 border-b border-slate-800">
+              <i class="fa-solid fa-plus-circle mr-2 text-rose-500"></i>Create New Playlist
+            </h2>
+
+            <form onsubmit="handleSavePlaylist(event)" class="space-y-4">
+              <input type="hidden" id="editPlaylistId" value="">
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Playlist Name *</label>
+                <input type="text" id="playlistName" placeholder="e.g. Best MILF Collection, Top Trending..." required class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Playlist Description</label>
+                <textarea id="playlistDescription" rows="2" placeholder="Short description for this playlist..." class="admin-input"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Cover Thumbnail URL</label>
+                <input type="text" id="playlistThumbnail" placeholder="https://... (leave empty to use first video thumbnail)" class="admin-input">
+              </div>
+
+              <!-- Video Picker Checklist -->
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-2">Select Videos for Playlist</label>
+                <div class="relative mb-2">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                  <input type="text" id="playlistVideoSearch" oninput="adminApp.filterPlaylistVideos(this.value)" placeholder="Search videos..." class="admin-input pl-9 py-2 text-xs">
+                </div>
+                <div id="playlistVideoChecklist" class="max-h-52 overflow-y-auto space-y-1 border border-slate-800 rounded-lg p-2 bg-slate-950">
+                  <!-- Rendered by admin.js -->
+                  <p class="text-xs text-slate-500 italic p-2">No videos uploaded yet. Upload videos first.</p>
+                </div>
+                <span class="text-[11px] text-slate-500 mt-1 block"><span id="selectedVideoCount">0</span> videos selected</span>
+              </div>
+
+              <div class="flex gap-3 pt-1">
+                <button type="button" onclick="resetPlaylistForm()" class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+                  Clear / Cancel
+                </button>
+                <button type="submit" class="btn-admin-primary w-full text-xs">
+                  <i class="fa-solid fa-layer-group mr-1"></i> <span id="playlistSubmitBtnText">Create Playlist</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Existing Playlists -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+                <i class="fa-solid fa-layer-group mr-1 text-rose-500"></i> Active Playlists
+              </h3>
+              <span id="playlistCountBadge" class="text-xs text-slate-400">0 Playlists</span>
+            </div>
+
+            <div id="adminPlaylistList" class="space-y-3">
+              <!-- Rendered by admin.js -->
+              <p class="text-xs text-slate-500 italic">No playlists created yet. Create your first playlist!</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -613,6 +733,35 @@
   <script src="firebase-config.js"></script>
 
   <script src="admin.js"></script>
+
+  <!-- Admin Sidebar Toggle Script -->
+  <script>
+    function openSidebar() {
+      document.getElementById('adminSidebar').classList.add('open');
+      document.getElementById('sidebarBackdrop').classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      document.getElementById('adminSidebar').classList.remove('open');
+      document.getElementById('sidebarBackdrop').classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    // Auto-close sidebar when switching tabs on mobile
+    const origSwitchTab = typeof switchTab !== 'undefined' ? switchTab : null;
+    window._origSwitchTab = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof switchTab === 'function') {
+        window._origSwitchTab = switchTab;
+        window.switchTab = function(tab) {
+          window._origSwitchTab(tab);
+          if (window.innerWidth < 768) {
+            closeSidebar();
+          }
+        };
+      }
+    });
+  </script>
 </body>
 
 </html>
