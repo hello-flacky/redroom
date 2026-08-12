@@ -9,7 +9,7 @@ const DEFAULT_CATEGORIES = ['All', 'Trending', '4K Ultra', 'Amateur', 'VR 360', 
 const INITIAL_SITE_VIEWS = 100;
 
 // Monetag Direct Link popunder settings
-const MONETAG_DIRECT_LINK = 'YOUR_MONETAG_LINK_HERE'; // User will replace this
+const MONETAG_DIRECT_LINK = 'https://omg10.com/4/10523396';
 let lastAdClickTime = 0;
 const AD_COOLDOWN_MS = 60000; // 1 minute
 let firstDownloadClicked = false;
