@@ -394,13 +394,7 @@ class RedroomApp {
           <div class="w-20 h-20 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-500 inline-flex items-center justify-center mb-4 shadow-lg shadow-rose-600/30 animate-pulse">
             <i class="fa-solid fa-film text-3xl"></i>
           </div>
-          <h3 class="text-2xl font-black dark:text-gray-100 text-slate-800 mb-2 tracking-tight">No Redroom Videos Uploaded Yet</h3>
-          <p class="dark:text-gray-400 text-slate-500 text-sm max-w-md mx-auto mb-6">
-            ${this.searchQuery || this.currentCategory !== 'All' ? `No videos found matching "${this.searchQuery || this.currentCategory}".` : 'The admin has not published any videos yet. Log in to the Admin Panel (Password: 911) to publish Streamtape video links!'}
-          </p>
-          <a href="admin.html" class="btn-outline-red px-6 py-2.5 rounded-xl text-xs font-bold inline-flex items-center gap-2">
-            <i class="fa-solid fa-user-shield"></i> Go to Admin Panel
-          </a>
+          <h3 class="text-2xl font-black dark:text-gray-100 text-slate-800 tracking-tight">No Videos</h3>
         </div>
       `;
       return;
@@ -725,7 +719,7 @@ class RedroomApp {
             </div>
           </div>
           <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors truncate">${pl.name}</h3>
-          <p class="text-[9px] sm:text-[11px] text-gray-400 truncate">${pl.description || vidCount + ' videos'}</p>
+          <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate">${pl.description || vidCount + ' videos'}</p>
         </div>
       `;
     }).join('');
