@@ -404,6 +404,18 @@ html.light .cat-pill:hover {
     color: #ff0055;
   }
 
+  html.light .mobile-bottom-nav button,
+  html.light .mobile-bottom-nav a {
+    color: #475569;
+  }
+
+  html.light .mobile-bottom-nav button:hover,
+  html.light .mobile-bottom-nav a:hover,
+  html.light .mobile-bottom-nav button.active,
+  html.light .mobile-bottom-nav a.active {
+    color: #ff0055;
+  }
+
   /* Extra bottom padding for body so content isn't hidden behind bottom nav */
   body {
     padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));

@@ -124,7 +124,7 @@
       <!-- Real-time Search Bar (Desktop) -->
       <div class="flex-1 max-w-xl hidden md:block">
         <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm"></i>
           <input 
             type="text" 
             id="searchInput"
@@ -139,16 +139,16 @@
         <button 
           onclick="document.getElementById('mobileSearchDrop').classList.toggle('hidden')" 
           title="Search"
-          class="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors">
-          <i class="fa-solid fa-magnifying-glass text-gray-300 text-sm"></i>
+          class="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-magnifying-glass text-slate-700 dark:text-gray-300 text-sm"></i>
         </button>
 
         <!-- Light / Dark Mode Toggle Button with Icon Animation -->
         <button 
           onclick="window.app.toggleTheme()" 
           title="Toggle Light/Dark Theme"
-          class="theme-toggle-btn w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors">
-          <i id="themeToggleIcon" class="fa-solid fa-sun text-amber-400 theme-toggle-icon text-base sm:text-lg"></i>
+          class="theme-toggle-btn w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-colors">
+          <i id="themeToggleIcon" class="fa-solid fa-sun text-amber-500 dark:text-amber-400 theme-toggle-icon text-base sm:text-lg"></i>
         </button>
       </div>
 
@@ -157,7 +157,7 @@
     <!-- Mobile Dropdown Search Bar -->
     <div id="mobileSearchDrop" class="md:hidden hidden px-3 pb-3">
       <div class="relative">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm"></i>
         <input 
           type="text" 
           oninput="window.app.searchQuery = this.value; window.app.renderVideoGrid();"
@@ -404,10 +404,6 @@
       <i id="mobileThemeIcon" class="fa-solid fa-sun"></i>
       <span>Theme</span>
     </button>
-    <a href="admin.html">
-      <i class="fa-solid fa-user-shield"></i>
-      <span>Admin</span>
-    </a>
   </nav>
 
   <!-- Firebase SDK (v8 compat for simpler non-module setup) -->
