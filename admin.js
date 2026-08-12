@@ -368,10 +368,23 @@ function switchTab(tabName) {
   adminApp.switchTab(tabName);
 }
 
+function formatThumbnailUrl(url) {
+  if (!url) return url;
+  // Convert standard Imgur links to direct image links
+  if (url.includes('imgur.com') && !url.includes('i.imgur.com') && !url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+    const parts = url.split('/');
+    let id = parts[parts.length - 1];
+    if(id.includes('?')) id = id.split('?')[0]; // strip query params
+    return `https://i.imgur.com/${id}.png`;
+  }
+  return url;
+}
+
 function updateAddPreview() {
   const rawUrl = document.getElementById('addStreamtapeUrl').value.trim();
   const title = document.getElementById('addTitle').value.trim() || 'Video Title Preview';
-  const thumb = document.getElementById('addThumbnail').value.trim() || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
+  let thumb = document.getElementById('addThumbnail').value.trim();
+  thumb = formatThumbnailUrl(thumb) || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
   
   const titleEl = document.getElementById('previewTitleText');
   const thumbEl = document.getElementById('previewThumbImg');
@@ -408,7 +421,8 @@ function handlePublishVideo(e) {
   const category = categorySelect ? categorySelect.value : 'Amateur';
   const durationInput = document.getElementById('addDuration');
   const duration = durationInput && durationInput.value.trim() !== '' ? durationInput.value.trim() : '15:00 Mins';
-  const thumbnail = document.getElementById('addThumbnail').value.trim() || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
+  let thumbnail = document.getElementById('addThumbnail').value.trim();
+  thumbnail = formatThumbnailUrl(thumbnail) || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
   const description = document.getElementById('addDescription').value.trim();
 
   // Smart Streamtape Parser
@@ -469,7 +483,7 @@ function handleSaveEdit(e) {
     title: document.getElementById('editTitle').value.trim(),
     category: document.getElementById('editCategorySelect').value,
     streamtapeUrl: adminApp.parseStreamtapeUrl(rawUrl),
-    thumbnail: document.getElementById('editThumbnail').value.trim()
+    thumbnail: formatThumbnailUrl(document.getElementById('editThumbnail').value.trim())
   };
   adminApp.saveEdit(updated);
 }
