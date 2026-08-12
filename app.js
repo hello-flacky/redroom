@@ -158,35 +158,11 @@ class RedroomApp {
       this.renderVideoGrid();
       this.incrementSiteViews();
       this.setupEventListeners();
-      this.setupMonetagAd();
       this.hideLoader();
     }, 300);
   }
 
-  setupMonetagAd() {
-    // Timer-based ad: opens ad link after first page interaction + cooldown
-    // Completely independent of click events - never blocks any UI interaction
-    let firstInteraction = false;
-    
-    const scheduleAd = () => {
-      if (firstInteraction) return;
-      firstInteraction = true;
-      
-      // Open ad after a delay on first interaction with the page
-      setTimeout(() => {
-        const now = Date.now();
-        if (now - lastAdClickTime > AD_COOLDOWN_MS) {
-          lastAdClickTime = now;
-          window.open(MONETAG_DIRECT_LINK, '_blank');
-        }
-        // Reset so it can fire again after cooldown
-        setTimeout(() => { firstInteraction = false; }, AD_COOLDOWN_MS);
-      }, 3000); // 3 second delay after first scroll/touch
-    };
 
-    // Only listen for passive scroll/touch events - never interfere with clicks
-    window.addEventListener('scroll', scheduleAd, { once: true, passive: true });
-  }
 
   logoutUser() {
     localStorage.removeItem('redroom_user_logged_in');
