@@ -34,8 +34,6 @@ body {
   color: var(--text-main);
   overflow-x: hidden;
   transition: background-color 0.4s ease, color 0.4s ease;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-text-size-adjust: 100%;
 }
 
 html.light body {
@@ -43,9 +41,7 @@ html.light body {
   color: #0f172a;
 }
 
-/* ========================
-   Custom Scrollbar 
-   ======================== */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -64,18 +60,7 @@ html.light ::-webkit-scrollbar-thumb {
   background: #ff0055;
 }
 
-/* Hide scrollbar for category pills + horizontal scrollable areas */
-.scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-
-/* ========================
-   Glassmorphism Classes 
-   ======================== */
+/* Glassmorphism Classes */
 .glass-panel {
   background: rgba(20, 11, 16, 0.88);
   backdrop-filter: blur(20px);
@@ -127,13 +112,6 @@ html.light .glass-card:hover {
   box-shadow: 0 12px 30px -5px rgba(255, 0, 85, 0.2);
 }
 
-/* On touch devices, disable hover lift to prevent sticky states */
-@media (hover: none) {
-  .glass-card:hover {
-    transform: none;
-  }
-}
-
 /* Logo Contrast Styling for Light Mode */
 .brand-text-red {
   color: #0f172a;
@@ -142,9 +120,7 @@ html.dark .brand-text-red {
   color: #ffffff;
 }
 
-/* ========================
-   Neon Red Utilities 
-   ======================== */
+/* Neon Red Utilities */
 .neon-text-red {
   color: #ff1a53;
   text-shadow: 0 0 12px rgba(255, 0, 85, 0.7), 0 0 24px rgba(255, 0, 85, 0.35);
@@ -169,11 +145,6 @@ html.light .neon-text-red {
   transform: translateY(-1px);
 }
 
-.btn-primary-red:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(255, 0, 85, 0.3);
-}
-
 .btn-outline-red {
   background: rgba(255, 0, 85, 0.08);
   border: 1px solid rgba(255, 0, 85, 0.35);
@@ -194,9 +165,7 @@ html.light .btn-outline-red {
   box-shadow: 0 0 14px rgba(255, 0, 85, 0.35);
 }
 
-/* ========================
-   Full Screen Player 
-   ======================== */
+/* Full Screen Player Theater View Styles (Polished Light Mode) */
 .fullscreen-player-overlay {
   background-color: rgba(5, 2, 4, 0.98);
   backdrop-filter: blur(24px);
@@ -244,16 +213,12 @@ html.light .responsive-embed-theater {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15), 0 0 20px rgba(255, 0, 85, 0.15);
 }
 
-/* ========================
-   Category Filter Pills 
-   ======================== */
+/* Category Filter Pill Active State */
 .cat-pill {
   transition: all 0.2s ease;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #d1d5db;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 html.light .cat-pill {
@@ -280,10 +245,6 @@ html.light .cat-pill:hover {
   box-shadow: 0 4px 14px rgba(255, 0, 85, 0.4);
   border-color: transparent;
 }
-
-/* ========================
-   Animations 
-   ======================== */
 
 /* Pulse animation for 18+ badge */
 @keyframes pulse-red {
@@ -340,223 +301,4 @@ html.light .cat-pill:hover {
 
 .theme-toggle-btn:hover .theme-toggle-icon {
   transform: rotate(30deg) scale(1.1);
-}
-
-
-/* ========================================================
-   MOBILE RESPONSIVE OVERRIDES
-   ======================================================== */
-
-/* --- Mobile Bottom Nav Bar for Main Site --- */
-.mobile-bottom-nav {
-  display: none;
-}
-
-@media (max-width: 639px) {
-  .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 45;
-    background: var(--nav-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid rgba(255, 0, 85, 0.25);
-    padding: 8px 0;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-    justify-content: space-around;
-    align-items: center;
-  }
-
-  html.light .mobile-bottom-nav {
-    background: rgba(255, 255, 255, 0.95);
-    border-top: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
-  }
-
-  .mobile-bottom-nav button,
-  .mobile-bottom-nav a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    font-size: 10px;
-    color: #9ca3af;
-    background: none;
-    border: none;
-    padding: 4px 12px;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    text-decoration: none;
-  }
-
-  .mobile-bottom-nav button i,
-  .mobile-bottom-nav a i {
-    font-size: 18px;
-  }
-
-  .mobile-bottom-nav button:hover,
-  .mobile-bottom-nav a:hover,
-  .mobile-bottom-nav button.active,
-  .mobile-bottom-nav a.active {
-    color: #ff0055;
-  }
-
-  html.light .mobile-bottom-nav button,
-  html.light .mobile-bottom-nav a {
-    color: #475569;
-  }
-
-  html.light .mobile-bottom-nav button:hover,
-  html.light .mobile-bottom-nav a:hover,
-  html.light .mobile-bottom-nav button.active,
-  html.light .mobile-bottom-nav a.active {
-    color: #ff0055;
-  }
-
-  /* Extra bottom padding for body so content isn't hidden behind bottom nav */
-  body {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-/* --- Header responsive tweaks --- */
-@media (max-width: 639px) {
-  .glass-nav .h-20 {
-    height: 56px !important;
-  }
-}
-
-/* --- Player modal mobile --- */
-@media (max-width: 767px) {
-  .responsive-embed-theater {
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(255, 0, 85, 0.2);
-  }
-
-  .player-top-bar {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-}
-
-/* --- Toast on mobile: full width, centered at bottom --- */
-@media (max-width: 639px) {
-  #toastContainer {
-    left: 12px !important;
-    right: 12px !important;
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
-    max-width: 100% !important;
-  }
-}
-
-/* --- Footer extra bottom spacing on mobile --- */
-@media (max-width: 639px) {
-  footer {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
-
-
-/* ========================================================
-   ADMIN PAGE - MOBILE SIDEBAR DRAWER
-   ======================================================== */
-
-/* Admin mobile menu toggle button */
-.admin-mobile-menu-btn {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .admin-mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: #334155;
-    color: #ffffff;
-    border: 1px solid #475569;
-    cursor: pointer;
-    transition: background 0.2s;
-    flex-shrink: 0;
-  }
-
-  .admin-mobile-menu-btn:hover {
-    background: #475569;
-  }
-
-  /* Sidebar becomes fixed overlay drawer */
-  .admin-sidebar-mobile {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 280px !important;
-    z-index: 60;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: none;
-  }
-
-  .admin-sidebar-mobile.open {
-    transform: translateX(0);
-    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.5);
-  }
-
-  /* Backdrop overlay */
-  .admin-sidebar-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 55;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-  }
-
-  .admin-sidebar-backdrop.visible {
-    display: block;
-  }
-
-  /* Admin content padding adjustments */
-  .admin-main-content {
-    padding: 16px !important;
-  }
-
-  /* Admin header padding adjustments */
-  .admin-header-bar {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  /* Admin stat cards: stack on mobile */
-  .admin-stat-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  /* Admin tables: horizontal scroll with smaller text */
-  .admin-table th,
-  .admin-table td {
-    font-size: 11px;
-    padding: 8px 10px;
-    white-space: nowrap;
-  }
-
-  /* Modals on mobile: full width */
-  .admin-modal-content {
-    max-width: 100% !important;
-    margin: 8px !important;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-}
-
-/* Very small phones */
-@media (max-width: 374px) {
-  .admin-stat-grid {
-    grid-template-columns: 1fr !important;
-  }
 }

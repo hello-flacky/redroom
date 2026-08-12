@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redroom - Modern 18+ Video Streaming Platform</title>
   
   <!-- Redroom SVG Favicon -->
@@ -99,25 +99,32 @@
 
   <!-- ==================== HEADER / TOP NAVIGATION ==================== -->
   <header class="sticky top-0 z-40 glass-nav">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
       
       <!-- Brand Logo & Live Page Views Counter Badge -->
-      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-        <a href="index.html" class="flex items-center gap-1.5 sm:gap-2.5 group flex-shrink-0">
-          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-600 to-rose-900 flex items-center justify-center text-white shadow-lg shadow-rose-600/40 group-hover:scale-105 transition-transform border border-rose-400/40">
-            <i class="fa-solid fa-play text-sm sm:text-lg ml-0.5"></i>
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-2.5 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-rose-900 flex items-center justify-center text-white shadow-lg shadow-rose-600/40 group-hover:scale-105 transition-transform border border-rose-400/40">
+            <i class="fa-solid fa-play text-lg ml-0.5"></i>
           </div>
           <div>
-            <span class="brand-text-red text-lg sm:text-2xl font-black tracking-wider group-hover:text-rose-500 transition-colors">
+            <span class="brand-text-red text-2xl font-black tracking-wider group-hover:text-rose-500 transition-colors">
               RED<span class="text-rose-500">ROOM</span>
             </span>
           </div>
+        </a>
+
+        <!-- Live Platform Page Views Badge -->
+        <span title="Total Platform Page Views" class="hidden sm:inline-flex items-center gap-1.5 bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full ml-2">
+          <i class="fa-solid fa-eye text-rose-500 animate-pulse"></i>
+          <span id="siteViewsCounter">1,420,500</span> Views
+        </span>
       </div>
 
-      <!-- Real-time Search Bar (Desktop) -->
+      <!-- Real-time Search Bar -->
       <div class="flex-1 max-w-xl hidden md:block">
         <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
           <input 
             type="text" 
             id="searchInput"
@@ -126,154 +133,100 @@
         </div>
       </div>
 
-      <!-- Header Actions -->
-      <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-        <!-- Mobile Search Toggle -->
-        <button 
-          onclick="document.getElementById('mobileSearchDrop').classList.toggle('hidden')" 
-          title="Search"
-          class="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-colors">
-          <i class="fa-solid fa-magnifying-glass text-slate-700 dark:text-gray-300 text-sm"></i>
-        </button>
-
+      <!-- Header Actions: Theme Switcher + User Auth -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
         <!-- Light / Dark Mode Toggle Button with Icon Animation -->
         <button 
           onclick="window.app.toggleTheme()" 
           title="Toggle Light/Dark Theme"
-          class="theme-toggle-btn w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-colors">
-          <i id="themeToggleIcon" class="fa-solid fa-sun text-amber-500 dark:text-amber-400 theme-toggle-icon text-base sm:text-lg"></i>
+          class="theme-toggle-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors">
+          <i id="themeToggleIcon" class="fa-solid fa-sun text-amber-400 theme-toggle-icon text-lg"></i>
         </button>
+
+
       </div>
 
-    </div>
-
-    <!-- Mobile Dropdown Search Bar -->
-    <div id="mobileSearchDrop" class="md:hidden hidden px-3 pb-3">
-      <div class="relative">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm"></i>
-        <input 
-          type="text" 
-          oninput="window.app.searchQuery = this.value; window.app.currentPage = 1; window.app.renderVideoGrid();"
-          placeholder="Search videos, tags, categories..." 
-          class="w-full bg-red-950/30 dark:bg-red-950/40 bg-slate-100 border border-rose-900/30 dark:border-rose-900/40 border-slate-300 rounded-xl py-2.5 pl-11 pr-4 text-sm dark:text-gray-100 text-slate-800 placeholder-gray-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all">
-      </div>
     </div>
   </header>
 
   <!-- ==================== MAIN CONTENT AREA ==================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
 
     <!-- HERO FEATURED VIDEO BANNER (Dynamic: Shows Top Viewed Video) -->
-    <section id="heroSection" class="relative rounded-2xl sm:rounded-3xl overflow-hidden glass-panel border border-rose-600/30 shadow-2xl transition-all duration-300 hidden">
+    <section id="heroSection" class="relative rounded-3xl overflow-hidden glass-panel border border-rose-600/30 shadow-2xl transition-all duration-300 hidden">
       <div class="absolute inset-0 bg-gradient-to-r from-[#0a0508] via-[#0a0508]/80 to-transparent dark:from-[#0a0508] from-slate-900 via-slate-900/80 z-10"></div>
       
       <!-- Background Image (Dynamic) -->
       <img id="heroBgImage" src="" alt="Featured Video" class="absolute inset-0 w-full h-full object-cover opacity-50">
 
-      <div class="relative z-20 p-4 sm:p-10 max-w-2xl space-y-3 sm:space-y-4">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="bg-rose-600 text-white text-[10px] sm:text-[11px] font-black px-2 sm:px-3 py-1 rounded-md uppercase tracking-wider flex items-center gap-1.5">
+      <div class="relative z-20 p-6 sm:p-10 max-w-2xl space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-md uppercase tracking-wider flex items-center gap-1.5">
             <i class="fa-solid fa-crown text-amber-300"></i> TOP VIEWED
           </span>
-          <span id="heroCategoryBadge" class="bg-black/60 border border-white/10 text-rose-400 text-[10px] sm:text-xs px-2 sm:px-2.5 py-1 rounded-md font-semibold">
+          <span id="heroCategoryBadge" class="bg-black/60 border border-white/10 text-rose-400 text-xs px-2.5 py-1 rounded-md font-semibold">
             <i class="fa-solid fa-video text-xs mr-1"></i> Streamtape Stream
           </span>
         </div>
 
-        <h1 id="heroTitle" class="text-xl sm:text-4xl font-black text-white leading-tight tracking-tight">
+        <h1 id="heroTitle" class="text-2xl sm:text-4xl font-black text-white leading-tight tracking-tight">
           Loading Top Video...
         </h1>
 
-        <p id="heroDescription" class="text-gray-300 text-xs sm:text-sm line-clamp-2 leading-relaxed">
+        <p id="heroDescription" class="text-gray-300 text-sm line-clamp-2 leading-relaxed">
           The most watched video on Redroom right now.
         </p>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-gray-300 pt-1 sm:pt-2">
+        <div class="flex flex-wrap items-center gap-4 text-xs text-gray-300 pt-2">
+          <span class="flex items-center gap-1 text-rose-400 font-semibold"><i class="fa-solid fa-star"></i> <span id="heroRating">98</span>% Rating</span>
+          <span>•</span>
           <span><span id="heroViews">0</span> Views</span>
           <span>•</span>
           <span id="heroDuration">15:00</span>
+          <span>•</span>
+          <span class="text-gray-400">By <span id="heroUploader">Redroom Admin</span></span>
         </div>
 
-        <div class="pt-2 sm:pt-4 flex items-center gap-3">
-          <button id="heroWatchBtn" class="btn-primary-red px-5 sm:px-8 py-3 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2">
-            <i class="fa-solid fa-play"></i> WATCH NOW
+        <div class="pt-4 flex items-center gap-3">
+          <button id="heroWatchBtn" class="btn-primary-red px-8 py-3.5 rounded-xl font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> WATCH FULLSCREEN
           </button>
         </div>
-      </div>
-    </section>
-
-    <!-- ==================== PLAYLISTS SECTION ==================== -->
-    <section id="playlistsSection" class="hidden">
-      <div class="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 class="text-base sm:text-xl font-extrabold dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-rose-500 text-sm sm:text-base"></i>
-          Video Playlist
-        </h2>
-        <div class="flex items-center gap-3">
-          <span id="playlistTotalCount" class="text-[10px] sm:text-xs dark:text-gray-400 text-slate-500 hidden sm:inline"></span>
-          <button onclick="window.app.openAllPlaylists()" class="text-[10px] sm:text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-colors">
-            View All <i class="fa-solid fa-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-      <div id="playlistCardsRow" class="flex gap-3 sm:gap-4 overflow-x-auto pb-3 scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
-        <!-- Rendered by app.js -->
-      </div>
-      <div id="playlistPaginationContainer" class="flex items-center justify-center gap-2 mt-2"></div>
-    </section>
-
-    <!-- ==================== PLAYLIST VIEW MODE (shows videos inside a playlist) ==================== -->
-    <section id="playlistViewSection" class="hidden space-y-3 sm:space-y-4">
-      <div class="flex items-center gap-2 sm:gap-3">
-        <button onclick="window.app.exitPlaylistView()" class="btn-outline-red px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1.5 font-bold hover:bg-rose-600 hover:text-white transition-colors flex-shrink-0">
-          <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Back to All</span><span class="sm:hidden">Back</span>
-        </button>
-        <div class="min-w-0">
-          <h2 id="playlistViewTitle" class="text-base sm:text-xl font-extrabold dark:text-white text-slate-900 tracking-tight truncate flex items-center gap-2">
-            <i class="fa-solid fa-layer-group text-rose-500 text-sm"></i>
-            <span id="playlistViewName">Playlist</span>
-          </h2>
-          <p id="playlistViewDesc" class="text-[10px] sm:text-xs dark:text-gray-400 text-slate-500 truncate"></p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 text-[10px] sm:text-xs dark:text-gray-400 text-slate-500">
-        <span id="playlistViewCount">0 videos</span>
-        <span>•</span>
-        <button onclick="window.app.playPlaylistAll()" class="text-rose-400 font-semibold hover:text-rose-300 flex items-center gap-1">
-          <i class="fa-solid fa-play text-[8px] sm:text-[10px]"></i> Play All
-        </button>
       </div>
     </section>
 
     <!-- CATEGORY PILLS & CONTROLS SECTION -->
-    <section id="mainBrowseSection" class="space-y-3 sm:space-y-4">
-      <div class="flex flex-row items-center justify-between gap-2">
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 class="text-base sm:text-xl font-extrabold dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 live-pulse"></span>
+          <h2 class="text-xl font-extrabold dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 live-pulse"></span>
             Explore Videos
           </h2>
-          <span id="resultCount" class="text-[10px] sm:text-xs text-gray-400 dark:text-gray-400 text-slate-500">Showing 6 Videos</span>
+          <span id="resultCount" class="text-xs text-gray-400 dark:text-gray-400 text-slate-500">Showing 6 Videos</span>
         </div>
-        <button onclick="window.app.openAllVideos()" class="text-[10px] sm:text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-colors flex-shrink-0">
-          View All Videos <i class="fa-solid fa-arrow-right"></i>
-        </button>
+
+        <!-- Mobile Search Bar -->
+        <div class="w-full md:hidden">
+          <input 
+            type="text" 
+            oninput="window.app.searchQuery = this.value; window.app.renderVideoGrid();"
+            placeholder="Search videos..." 
+            class="w-full bg-red-950/40 dark:bg-red-950/40 bg-slate-200 border border-rose-900/40 rounded-xl py-2 px-4 text-sm dark:text-gray-100 text-slate-800">
+        </div>
       </div>
 
       <!-- Filter Pills Bar -->
-      <div id="categoryPills" class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
+      <div id="categoryPills" class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         <!-- Rendered by JS -->
       </div>
     </section>
 
     <!-- VIDEO GRID CONTAINER -->
     <section>
-      <div id="videoGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
+      <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Rendered dynamically by app.js -->
       </div>
-      
-      <!-- Pagination Container -->
-      <div id="paginationContainer" class="mt-8 flex items-center justify-center gap-2"></div>
     </section>
 
   </main>
@@ -282,22 +235,22 @@
   <div id="playerModal" class="fixed inset-0 z-50 fullscreen-player-overlay w-full h-full flex flex-col overflow-y-auto hidden">
     
     <!-- Theater Top Navigation Bar -->
-    <div class="player-top-bar px-3 sm:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 sticky top-0 z-30">
-      <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-        <button onclick="window.app.closePlayer()" class="btn-outline-red px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1.5 sm:gap-2 font-bold hover:bg-rose-600 hover:text-white transition-colors flex-shrink-0">
-          <i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Back to Redroom</span><span class="sm:hidden">Back</span>
+    <div class="player-top-bar px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-30">
+      <div class="flex items-center gap-4 min-w-0">
+        <button onclick="window.app.closePlayer()" class="btn-outline-red px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-2 font-bold hover:bg-rose-600 hover:text-white transition-colors">
+          <i class="fa-solid fa-arrow-left"></i> Back to Redroom
         </button>
         <span class="hidden sm:inline-block w-px h-5 bg-white/10 dark:bg-white/10 bg-slate-300"></span>
-        <h3 id="playerTitle" class="text-xs sm:text-base font-bold dark:text-white text-slate-900 truncate">Video Title</h3>
+        <h3 id="playerTitle" class="text-sm sm:text-base font-bold dark:text-white text-slate-900 truncate max-w-xl">Video Title</h3>
       </div>
       
-      <button onclick="window.app.closePlayer()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 dark:bg-white/10 bg-slate-200 hover:bg-rose-600 text-gray-300 dark:text-gray-300 text-slate-700 hover:text-white flex items-center justify-center transition-colors shrink-0">
-        <i class="fa-solid fa-xmark text-base sm:text-lg"></i>
+      <button onclick="window.app.closePlayer()" class="w-9 h-9 rounded-full bg-white/10 dark:bg-white/10 bg-slate-200 hover:bg-rose-600 text-gray-300 dark:text-gray-300 text-slate-700 hover:text-white flex items-center justify-center transition-colors shrink-0">
+        <i class="fa-solid fa-xmark text-lg"></i>
       </button>
     </div>
 
     <!-- Theater Main Content Area -->
-    <div class="max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 flex-1">
+    <div class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
       
       <!-- Streamtape Responsive 16:9 Embed Theater Frame -->
       <div id="streamtapeIframeContainer" class="responsive-embed-theater">
@@ -305,18 +258,18 @@
       </div>
 
       <!-- Video Details Bar -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 pt-2">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
         
         <!-- Left Column: Channel, Reactions, Description -->
-        <div class="lg:col-span-2 space-y-4 sm:space-y-6">
+        <div class="lg:col-span-2 space-y-6">
           
           <!-- Channel Info & Actions (Download, Like, Dislike, Share) -->
-          <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-5 rounded-xl sm:rounded-2xl glass-card border shadow-lg">
+          <div class="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-card border shadow-lg">
             <div class="flex items-center gap-3">
-              <img id="playerUploaderAvatar" src="" class="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border border-rose-500/40">
+              <img id="playerUploaderAvatar" src="" class="w-11 h-11 rounded-full object-cover border border-rose-500/40">
               <div>
-                <span id="playerUploader" class="font-bold dark:text-white text-slate-900 text-xs sm:text-sm block">Uploader</span>
-                <div class="flex items-center gap-2 text-[10px] sm:text-xs dark:text-gray-400 text-slate-500">
+                <span id="playerUploader" class="font-bold dark:text-white text-slate-900 text-sm block">Uploader</span>
+                <div class="flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500">
                   <span id="playerViews">0 Views</span>
                   <span>•</span>
                   <span id="playerUploadDate">Date</span>
@@ -325,21 +278,21 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <button onclick="window.app.downloadVideo()" class="btn-primary-red px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1.5 font-bold shadow-md">
-                <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Download</span><span class="sm:hidden">DL</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="window.app.downloadVideo()" class="btn-primary-red px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 font-bold shadow-md">
+                <i class="fa-solid fa-download"></i> Download Video
               </button>
 
-              <button onclick="window.app.toggleLike()" class="btn-outline-red px-2.5 sm:px-3.5 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 font-semibold">
+              <button onclick="window.app.toggleLike()" class="btn-outline-red px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 font-semibold">
                 <i class="fa-solid fa-thumbs-up"></i>
                 <span id="playerLikeCount">0</span>
               </button>
-              <button onclick="window.app.toggleDislike()" class="btn-outline-red px-2.5 sm:px-3.5 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 font-semibold">
+              <button onclick="window.app.toggleDislike()" class="btn-outline-red px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 font-semibold">
                 <i class="fa-solid fa-thumbs-down"></i>
                 <span id="playerDislikeCount">0</span>
               </button>
-              <button onclick="window.app.copyShareLink()" class="btn-outline-red px-2.5 sm:px-4 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 font-bold">
-                <i class="fa-solid fa-share-nodes"></i> <span class="hidden sm:inline">Share</span>
+              <button onclick="window.app.copyShareLink()" class="btn-outline-red px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 font-bold">
+                <i class="fa-solid fa-share-nodes"></i> Share
               </button>
             </div>
           </div>
@@ -372,79 +325,24 @@
 
 
 
-  <!-- ==================== ALL VIDEOS MODAL ==================== -->
-  <div id="allVideosModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden bg-black/80 backdrop-blur-sm">
-    <div class="glass-panel w-full max-w-6xl h-[85vh] rounded-2xl sm:rounded-3xl border border-rose-600/30 shadow-2xl flex flex-col relative overflow-hidden bg-slate-50 dark:bg-[#0a0508]">
-      <div class="flex items-center justify-between p-4 sm:p-6 border-b border-rose-500/20 bg-slate-200/50 dark:bg-black/40">
-        <h2 class="text-lg sm:text-2xl font-black dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
-          <i class="fa-solid fa-film text-rose-500"></i> All Videos
-          <span id="allVideosCount" class="text-xs font-semibold dark:text-gray-400 text-slate-500 ml-2"></span>
-        </h2>
-        <button onclick="window.app.closeAllVideos()" class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center border border-rose-500/20">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-none">
-        <div id="allVideosGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-          <!-- Rendered by JS -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== ALL PLAYLISTS MODAL ==================== -->
-  <div id="allPlaylistsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden bg-black/80 backdrop-blur-sm">
-    <div class="glass-panel w-full max-w-5xl h-[80vh] rounded-2xl sm:rounded-3xl border border-rose-600/30 shadow-2xl flex flex-col relative overflow-hidden bg-slate-50 dark:bg-[#0a0508]">
-      <div class="flex items-center justify-between p-4 sm:p-6 border-b border-rose-500/20 bg-slate-200/50 dark:bg-black/40">
-        <h2 class="text-lg sm:text-2xl font-black dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-rose-500"></i> All Video Playlists
-        </h2>
-        <button onclick="window.app.closeAllPlaylists()" class="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center border border-rose-500/20">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-none">
-        <div id="allPlaylistsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-           <!-- Rendered by JS -->
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
-  <div id="toastContainer" class="fixed bottom-6 right-3 sm:right-6 left-3 sm:left-auto z-50 flex flex-col gap-2 max-w-sm"></div>
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
 
   <!-- ==================== FOOTER ==================== -->
-  <footer class="mt-auto bg-black/60 dark:bg-black/60 bg-slate-200 border-t border-rose-900/30 dark:border-rose-900/30 border-slate-300 py-6 sm:py-8 pb-20 sm:pb-8 text-xs text-gray-500 dark:text-gray-500 text-slate-600">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex flex-col items-center text-center sm:text-left sm:flex-row sm:justify-between gap-3 sm:gap-4">
+  <footer class="mt-auto bg-black/60 dark:bg-black/60 bg-slate-200 border-t border-rose-900/30 dark:border-rose-900/30 border-slate-300 py-8 text-xs text-gray-500 dark:text-gray-500 text-slate-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2">
         <span class="font-extrabold dark:text-white text-slate-900 text-sm">RED<span class="text-rose-500">ROOM</span></span>
-        <span class="hidden sm:inline">• 18+ Adult Entertainment Platform</span>
+        <span>• 18+ Adult Entertainment Platform</span>
       </div>
-      <div class="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] flex-wrap justify-center">
-        <span class="text-rose-400 font-semibold"><i class="fa-solid fa-chart-line mr-1"></i> <span id="footerSiteViews">1,420,500</span> Visits</span>
+      <div class="flex items-center gap-4 text-[11px]">
+        <span class="text-rose-400 font-semibold"><i class="fa-solid fa-chart-line mr-1"></i> <span id="footerSiteViews">1,420,500</span> Total Platform Visits</span>
         <a href="#" class="hover:text-rose-500">18+ Compliance</a>
-        <a href="#" class="hover:text-rose-500">Privacy</a>
+        <a href="#" class="hover:text-rose-500">Privacy Policy</a>
       </div>
-      <p class="text-[10px] sm:text-xs">&copy; 2026 Redroom VOD. All Rights Reserved.</p>
+      <p>&copy; 2026 Redroom VOD. All Rights Reserved.</p>
     </div>
   </footer>
-
-  <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
-  <nav class="mobile-bottom-nav sm:hidden">
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
-      <i class="fa-solid fa-house"></i>
-      <span>Home</span>
-    </button>
-    <button onclick="document.getElementById('mobileSearchDrop').classList.remove('hidden'); document.getElementById('mobileSearchDrop').querySelector('input').focus();">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <span>Search</span>
-    </button>
-    <button onclick="window.app.toggleTheme()">
-      <i id="mobileThemeIcon" class="fa-solid fa-sun"></i>
-      <span>Theme</span>
-    </button>
-  </nav>
 
   <!-- Firebase SDK (v8 compat for simpler non-module setup) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
