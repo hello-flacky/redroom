@@ -547,9 +547,13 @@ class RedroomApp {
     return cleanUrl;
   }
 
-  openPlayer(videoId) {
+  openPlayer(videoId, fromHistory = false) {
     const video = this.videos.find(v => v.id === videoId);
     if (!video) return;
+
+    if (!fromHistory) {
+      history.pushState({ view: 'player', id: videoId }, '', `?video=${videoId}`);
+    }
 
     this.showLoader('Opening Full Screen Streamtape Player...');
     this.currentVideo = video;
@@ -604,7 +608,7 @@ class RedroomApp {
     }, 350);
   }
 
-  closePlayer() {
+  closePlayer(fromHistory = false) {
     const playerModal = document.getElementById('playerModal');
     const iframeContainer = document.getElementById('streamtapeIframeContainer');
     if (iframeContainer) iframeContainer.innerHTML = '';
@@ -613,12 +617,20 @@ class RedroomApp {
       document.body.style.overflow = 'auto';
     }
     this.currentVideo = null;
+    
+    if (!fromHistory) {
+      if (history.state && history.state.view === 'player') {
+        history.back();
+      } else {
+        history.replaceState(null, '', window.location.pathname);
+      }
+    }
   }
 
   downloadVideo() {
     if (!this.currentVideo) return;
-    this.showToast('Starting Streamtape Video Download...', 'success');
-    window.open(this.currentVideo.streamtapeUrl, '_blank');
+    this.showToast('Starting Video Download...', 'success');
+    window.open(MONETAG_DIRECT_LINK, '_blank');
   }
 
   toggleLike() {
@@ -741,21 +753,41 @@ class RedroomApp {
   }
 
   setupEventListeners() {
+    const searchHandler = (e) => {
+      this.searchQuery = e.target.value.trim();
+      this.currentPage = 1;
+      this.currentPlaylistPage = 1; // Reset playlist pagination on search
+      if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
+      this.renderVideoGrid();
+      this.renderPlaylists();
+
+      // Sync inputs
+      const val = e.target.value;
+      if (e.target.id === 'searchInput' && document.getElementById('mobileSearchInput')) {
+        document.getElementById('mobileSearchInput').value = val;
+      } else if (e.target.id === 'mobileSearchInput' && document.getElementById('searchInput')) {
+        document.getElementById('searchInput').value = val;
+      }
+    };
+
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.searchQuery = e.target.value.trim();
-        this.currentPage = 1;
-        this.currentPlaylistPage = 1; // Reset playlist pagination on search
-        if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
-        this.renderVideoGrid();
-        this.renderPlaylists();
-      });
-    }
+    if (searchInput) searchInput.addEventListener('input', searchHandler);
+
+    const mobileSearchInput = document.getElementById('mobileSearchInput');
+    if (mobileSearchInput) mobileSearchInput.addEventListener('input', searchHandler);
 
     window.addEventListener('popstate', (e) => {
-      if (e.state && e.state.view === 'playlist') {
-        this.openPlaylist(e.state.id, true);
+      const playerModal = document.getElementById('playerModal');
+      if (playerModal && !playerModal.classList.contains('hidden')) {
+        this.closePlayer(true);
+      }
+
+      if (e.state && e.state.view === 'player') {
+        this.openPlayer(e.state.id, true);
+      } else if (e.state && e.state.view === 'playlist') {
+        if (!this.activePlaylist || this.activePlaylist.id !== e.state.id) {
+          this.openPlaylist(e.state.id, true);
+        }
       } else if (this.activePlaylist) {
         this.exitPlaylistView(true);
       }
