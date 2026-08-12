@@ -164,35 +164,28 @@ class RedroomApp {
   }
 
   setupMonetagAd() {
-    // Timer-based ad: opens once per cooldown period on first user interaction
-    // Does NOT block any button clicks or site functionality
-    let adTriggered = false;
-    const triggerAd = () => {
-      const now = Date.now();
-      if (now - lastAdClickTime > AD_COOLDOWN_MS) {
-        lastAdClickTime = now;
-        // Use setTimeout so the actual click action completes first
-        setTimeout(() => {
+    // Timer-based ad: opens ad link after first page interaction + cooldown
+    // Completely independent of click events - never blocks any UI interaction
+    let firstInteraction = false;
+    
+    const scheduleAd = () => {
+      if (firstInteraction) return;
+      firstInteraction = true;
+      
+      // Open ad after a delay on first interaction with the page
+      setTimeout(() => {
+        const now = Date.now();
+        if (now - lastAdClickTime > AD_COOLDOWN_MS) {
+          lastAdClickTime = now;
           window.open(MONETAG_DIRECT_LINK, '_blank');
-        }, 100);
-      }
-      // Remove listener after first trigger so it doesn't fire on every click
-      if (!adTriggered) {
-        adTriggered = true;
-        // Re-arm after cooldown
-        setTimeout(() => { adTriggered = false; }, AD_COOLDOWN_MS);
-      }
+        }
+        // Reset so it can fire again after cooldown
+        setTimeout(() => { firstInteraction = false; }, AD_COOLDOWN_MS);
+      }, 3000); // 3 second delay after first scroll/touch
     };
 
-    // Only trigger on the very first click, then wait for cooldown
-    document.body.addEventListener('click', (e) => {
-      // Don't trigger ad on buttons, links, inputs, or interactive elements
-      const tag = e.target.tagName;
-      const isInteractive = e.target.closest('button, a, input, select, textarea, [onclick], .glass-card, .cat-pill, .btn-primary-red, .btn-outline-red');
-      if (isInteractive) return;
-      
-      triggerAd();
-    }, true);
+    // Only listen for passive scroll/touch events - never interfere with clicks
+    window.addEventListener('scroll', scheduleAd, { once: true, passive: true });
   }
 
   logoutUser() {
