@@ -28,6 +28,8 @@ class RedroomApp {
     this.currentVideo = null;
     this.activePlaylist = null; // Currently viewing playlist
     this.playlistVideoIndex = 0; // Current index in playlist playback
+    this.currentPage = 1;
+    this.itemsPerPage = 20;
     this.init();
     this.fetchDataFromFirebase();
   }
@@ -287,6 +289,7 @@ class RedroomApp {
   setCategory(category) {
     this.showLoader(`Loading ${category} Videos...`);
     this.currentCategory = category;
+    this.currentPage = 1;
     this.renderCategoryPills();
     setTimeout(() => {
       this.renderVideoGrid();
@@ -384,11 +387,23 @@ class RedroomApp {
       filtered.sort((a, b) => (orderMap[a.id] || 0) - (orderMap[b.id] || 0));
     }
 
+    // Pagination logic
+    const totalVideos = filtered.length;
+    const totalPages = Math.ceil(totalVideos / this.itemsPerPage);
+    
+    if (this.currentPage > totalPages && totalPages > 0) {
+        this.currentPage = totalPages;
+    }
+    
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedVideos = filtered.slice(startIndex, endIndex);
+
     if (resultCount) {
-      resultCount.textContent = `Showing ${filtered.length} Videos`;
+      resultCount.textContent = `Showing ${paginatedVideos.length} of ${totalVideos} Videos`;
     }
 
-    if (filtered.length === 0) {
+    if (paginatedVideos.length === 0) {
       grid.innerHTML = `
         <div class="col-span-full py-20 text-center glass-card rounded-3xl p-10 border border-rose-900/30">
           <div class="w-20 h-20 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-500 inline-flex items-center justify-center mb-4 shadow-lg shadow-rose-600/30 animate-pulse">
@@ -397,10 +412,11 @@ class RedroomApp {
           <h3 class="text-2xl font-black dark:text-gray-100 text-slate-800 tracking-tight">No Videos</h3>
         </div>
       `;
+      this.renderPagination(totalPages);
       return;
     }
 
-    grid.innerHTML = filtered.map(vid => `
+    grid.innerHTML = paginatedVideos.map(vid => `
       <div class="glass-card rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
         <div class="thumb-container relative aspect-video bg-black/80">
           <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80'">
@@ -442,6 +458,44 @@ class RedroomApp {
         </div>
       </div>
     `).join('');
+    
+    this.renderPagination(totalPages);
+  }
+
+  renderPagination(totalPages) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="flex items-center gap-2 sm:gap-4 bg-slate-100 dark:bg-black/40 p-2 sm:p-3 rounded-full border border-slate-300 dark:border-rose-900/30 shadow-lg">
+        <button onclick="window.app.changePage(${this.currentPage - 1})" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-slate-200 disabled:dark:hover:bg-white/5 disabled:hover:text-slate-700 disabled:dark:hover:text-gray-300 cursor-pointer disabled:cursor-not-allowed" ${this.currentPage === 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-left text-xs sm:text-sm"></i>
+        </button>
+        
+        <span class="text-xs sm:text-sm font-semibold dark:text-gray-200 text-slate-700 px-2 sm:px-4">
+          Page <span class="text-rose-500 font-black">${this.currentPage}</span> of ${totalPages}
+        </span>
+        
+        <button onclick="window.app.changePage(${this.currentPage + 1})" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-slate-200 disabled:dark:hover:bg-white/5 disabled:hover:text-slate-700 disabled:dark:hover:text-gray-300 cursor-pointer disabled:cursor-not-allowed" ${this.currentPage === totalPages ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-right text-xs sm:text-sm"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  changePage(newPage) {
+    this.currentPage = newPage;
+    this.renderVideoGrid();
+    
+    const gridEl = document.getElementById('mainBrowseSection');
+    if (gridEl) {
+      gridEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   openPlayer(videoId) {
@@ -651,6 +705,7 @@ class RedroomApp {
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         this.searchQuery = e.target.value.trim();
+        this.currentPage = 1;
         if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
         this.renderVideoGrid();
       });
@@ -733,6 +788,7 @@ class RedroomApp {
     this.playlistVideoIndex = 0;
     this.currentCategory = 'All';
     this.searchQuery = '';
+    this.currentPage = 1;
 
     // Update UI: hide hero, playlists section, main browse section; show playlist view
     const heroSection = document.getElementById('heroSection');

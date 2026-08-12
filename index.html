@@ -112,13 +112,6 @@
               RED<span class="text-rose-500">ROOM</span>
             </span>
           </div>
-        </a>
-
-        <!-- Live Platform Page Views Badge -->
-        <span title="Total Platform Page Views" class="hidden sm:inline-flex items-center gap-1.5 bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full ml-2">
-          <i class="fa-solid fa-eye text-rose-500 animate-pulse"></i>
-          <span id="siteViewsCounter">1,420,500</span> Views
-        </span>
       </div>
 
       <!-- Real-time Search Bar (Desktop) -->
@@ -160,7 +153,7 @@
         <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-400 text-sm"></i>
         <input 
           type="text" 
-          oninput="window.app.searchQuery = this.value; window.app.renderVideoGrid();"
+          oninput="window.app.searchQuery = this.value; window.app.currentPage = 1; window.app.renderVideoGrid();"
           placeholder="Search videos, tags, categories..." 
           class="w-full bg-red-950/30 dark:bg-red-950/40 bg-slate-100 border border-rose-900/30 dark:border-rose-900/40 border-slate-300 rounded-xl py-2.5 pl-11 pr-4 text-sm dark:text-gray-100 text-slate-800 placeholder-gray-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all">
       </div>
@@ -273,6 +266,9 @@
       <div id="videoGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
         <!-- Rendered dynamically by app.js -->
       </div>
+      
+      <!-- Pagination Container -->
+      <div id="paginationContainer" class="mt-8 flex items-center justify-center gap-2"></div>
     </section>
 
   </main>
