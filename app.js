@@ -164,13 +164,35 @@ class RedroomApp {
   }
 
   setupMonetagAd() {
-    document.body.addEventListener('click', () => {
+    // Timer-based ad: opens once per cooldown period on first user interaction
+    // Does NOT block any button clicks or site functionality
+    let adTriggered = false;
+    const triggerAd = () => {
       const now = Date.now();
       if (now - lastAdClickTime > AD_COOLDOWN_MS) {
         lastAdClickTime = now;
-        window.open(MONETAG_DIRECT_LINK, '_blank');
+        // Use setTimeout so the actual click action completes first
+        setTimeout(() => {
+          window.open(MONETAG_DIRECT_LINK, '_blank');
+        }, 100);
       }
-    });
+      // Remove listener after first trigger so it doesn't fire on every click
+      if (!adTriggered) {
+        adTriggered = true;
+        // Re-arm after cooldown
+        setTimeout(() => { adTriggered = false; }, AD_COOLDOWN_MS);
+      }
+    };
+
+    // Only trigger on the very first click, then wait for cooldown
+    document.body.addEventListener('click', (e) => {
+      // Don't trigger ad on buttons, links, inputs, or interactive elements
+      const tag = e.target.tagName;
+      const isInteractive = e.target.closest('button, a, input, select, textarea, [onclick], .glass-card, .cat-pill, .btn-primary-red, .btn-outline-red');
+      if (isInteractive) return;
+      
+      triggerAd();
+    }, true);
   }
 
   logoutUser() {
@@ -431,10 +453,6 @@ class RedroomApp {
             ${vid.duration || '15:00'}
           </div>
 
-          <div class="absolute bottom-1.5 sm:bottom-3 left-1.5 sm:left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md border border-white/10 flex items-center gap-1">
-            <i class="fa-solid fa-star text-[8px] sm:text-[10px]"></i> ${vid.rating || 98}%
-          </div>
-
           <div class="play-overlay absolute inset-0 bg-gradient-to-t from-red-950/90 via-black/40 to-transparent flex items-center justify-center">
             <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/50 transform group-hover:scale-110 transition-transform duration-300">
               <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
@@ -447,10 +465,6 @@ class RedroomApp {
             <h3 class="font-bold dark:text-gray-100 text-slate-800 text-xs sm:text-base group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug mb-1 sm:mb-2">
               ${vid.title}
             </h3>
-            <div class="hidden sm:flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500 mb-3">
-              <img src="${vid.uploaderAvatar}" alt="${vid.uploader}" class="w-5 h-5 rounded-full object-cover border border-rose-500/30">
-              <span class="truncate">${vid.uploader}</span>
-            </div>
           </div>
 
           <div class="flex items-center justify-between text-[9px] sm:text-xs dark:text-gray-400 text-slate-500 pt-1.5 sm:pt-2 border-t border-white/5">
@@ -763,7 +777,8 @@ class RedroomApp {
     container.innerHTML = paginatedPlaylists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
-      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const thumbSrc = this.formatThumbnailUrl(rawThumb);
 
       return `
         <div class="flex-shrink-0 w-40 sm:w-52 cursor-pointer group" onclick="window.app.openPlaylist('${pl.id}')">
@@ -829,7 +844,8 @@ class RedroomApp {
     grid.innerHTML = activePlaylists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
-      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const thumbSrc = this.formatThumbnailUrl(rawThumb);
 
       return `
         <div class="cursor-pointer group flex flex-col h-full" onclick="window.app.closeAllPlaylists(); window.app.openPlaylist('${pl.id}')">
@@ -859,6 +875,59 @@ class RedroomApp {
 
   closeAllPlaylists() {
     const modal = document.getElementById('allPlaylistsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  formatThumbnailUrl(url) {
+    if (!url) return url;
+    if (url.includes('imgur.com') && !url.includes('i.imgur.com') && !url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+      const parts = url.split('/');
+      let id = parts[parts.length - 1];
+      if (id.includes('?')) id = id.split('?')[0];
+      return `https://i.imgur.com/${id}.png`;
+    }
+    return url;
+  }
+
+  openAllVideos() {
+    const modal = document.getElementById('allVideosModal');
+    const grid = document.getElementById('allVideosGrid');
+    const countEl = document.getElementById('allVideosCount');
+    if (!modal || !grid) return;
+
+    if (countEl) countEl.textContent = `(${this.videos.length})`;
+
+    grid.innerHTML = this.videos.map(vid => `
+      <div class="cursor-pointer group flex flex-col" onclick="window.app.closeAllVideos(); window.app.openPlayer('${vid.id}')">
+        <div class="relative aspect-video rounded-xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg w-full">
+          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+          <div class="absolute top-1.5 left-1.5 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+            ${vid.quality || 'HD'}
+          </div>
+          <div class="absolute bottom-1.5 right-1.5 bg-black/80 text-gray-200 text-[9px] font-semibold px-1.5 py-0.5 rounded border border-white/10">
+            ${vid.duration || '15:00'}
+          </div>
+          <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-7 h-7 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+              <i class="fa-solid fa-play text-[10px] ml-0.5"></i>
+            </div>
+          </div>
+        </div>
+        <h3 class="mt-1.5 text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${vid.title}</h3>
+        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
+      </div>
+    `).join('');
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAllVideos() {
+    const modal = document.getElementById('allVideosModal');
     if (modal) {
       modal.classList.add('hidden');
       document.body.style.overflow = 'auto';
