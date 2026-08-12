@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redroom - Modern 18+ Video Streaming Platform</title>
+  
+  <!-- Redroom SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ff0055'/><polygon points='38,25 75,50 38,75' fill='%23ffffff'/></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            redroom: {
+              950: '#0a0508',
+              900: '#140b10',
+              800: '#1e111a',
+              700: '#2d1424',
+              red: '#ff0055',
+              crimson: '#dc143c',
+              darkred: '#8b0000',
+              accent: '#ff1a53'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#0a0508] dark:bg-[#0a0508] dark:text-gray-100 text-slate-800 min-h-screen flex flex-col selection:bg-rose-600 selection:text-white transition-colors duration-300">
+
+  <!-- ==================== NEON SPINNER GLOBAL LOADING OVERLAY ==================== -->
+  <div id="globalLoader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md hidden transition-opacity duration-300">
+    <div class="relative flex items-center justify-center">
+      <div class="w-16 h-16 neon-spinner"></div>
+      <div class="absolute w-8 h-8 rounded-full bg-rose-600/30 animate-ping"></div>
+    </div>
+    <span id="globalLoaderMessage" class="mt-5 text-xs font-bold text-rose-400 uppercase tracking-widest animate-pulse">
+      Loading Redroom VOD...
+    </span>
+  </div>
+
+  <!-- ==================== 18+ AGE GATE MODAL ==================== -->
+  <div id="ageGateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+    <div class="glass-panel w-full max-w-lg rounded-3xl p-8 border border-rose-600/30 shadow-2xl text-center relative overflow-hidden">
+      <!-- Glow background effect -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-rose-600/20 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-rose-900/30 rounded-full blur-3xl"></div>
+
+      <!-- Icon & Logo Header -->
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-500 mb-6 shadow-lg shadow-rose-600/30">
+        <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+      </div>
+
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-md tracking-wider">18+ ADULT ONLY</span>
+        <span class="text-xs text-rose-400 font-semibold uppercase tracking-widest">Verification</span>
+      </div>
+
+      <h2 class="text-3xl font-black dark:text-white text-slate-900 mb-3 tracking-tight">
+        Welcome to <span class="neon-text-red">Redroom</span>
+      </h2>
+
+      <p class="dark:text-gray-300 text-slate-600 text-sm leading-relaxed mb-8 max-w-sm mx-auto">
+        This platform contains adult entertainment content intended exclusively for individuals who are <strong>18 years of age or older</strong> (or legal age in your jurisdiction).
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button onclick="window.app.confirmAge()" class="btn-primary-red flex-1 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-transform">
+          <i class="fa-solid fa-check-double mr-2"></i> I AM 18 OR OLDER - ENTER
+        </button>
+        <a href="https://www.google.com" class="btn-outline-red px-6 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center">
+          EXIT
+        </a>
+      </div>
+
+      <p class="text-[11px] text-gray-500 mt-6">
+        By clicking enter, you agree to our terms of service and confirm your legal age.
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== HEADER / TOP NAVIGATION ==================== -->
+  <header class="sticky top-0 z-40 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo & Live Page Views Counter Badge -->
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-2.5 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-rose-900 flex items-center justify-center text-white shadow-lg shadow-rose-600/40 group-hover:scale-105 transition-transform border border-rose-400/40">
+            <i class="fa-solid fa-play text-lg ml-0.5"></i>
+          </div>
+          <div>
+            <span class="brand-text-red text-2xl font-black tracking-wider group-hover:text-rose-500 transition-colors">
+              RED<span class="text-rose-500">ROOM</span>
+            </span>
+          </div>
+        </a>
+
+        <!-- Live Platform Page Views Badge -->
+        <span title="Total Platform Page Views" class="hidden sm:inline-flex items-center gap-1.5 bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full ml-2">
+          <i class="fa-solid fa-eye text-rose-500 animate-pulse"></i>
+          <span id="siteViewsCounter">1,420,500</span> Views
+        </span>
+      </div>
+
+      <!-- Real-time Search Bar -->
+      <div class="flex-1 max-w-xl hidden md:block">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input 
+            type="text" 
+            id="searchInput"
+            placeholder="Search videos, tags, categories..." 
+            class="w-full bg-red-950/30 dark:bg-red-950/40 bg-slate-100 border border-rose-900/30 dark:border-rose-900/40 border-slate-300 rounded-full py-2.5 pl-11 pr-4 text-sm dark:text-gray-100 text-slate-800 placeholder-gray-500 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30 transition-all">
+        </div>
+      </div>
+
+      <!-- Header Actions: Theme Switcher + User Auth -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <!-- Light / Dark Mode Toggle Button with Icon Animation -->
+        <button 
+          onclick="window.app.toggleTheme()" 
+          title="Toggle Light/Dark Theme"
+          class="theme-toggle-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors">
+          <i id="themeToggleIcon" class="fa-solid fa-sun text-amber-400 theme-toggle-icon text-lg"></i>
+        </button>
+
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+
+    <!-- HERO FEATURED VIDEO BANNER (Dynamic: Shows Top Viewed Video) -->
+    <section id="heroSection" class="relative rounded-3xl overflow-hidden glass-panel border border-rose-600/30 shadow-2xl transition-all duration-300 hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0a0508] via-[#0a0508]/80 to-transparent dark:from-[#0a0508] from-slate-900 via-slate-900/80 z-10"></div>
+      
+      <!-- Background Image (Dynamic) -->
+      <img id="heroBgImage" src="" alt="Featured Video" class="absolute inset-0 w-full h-full object-cover opacity-50">
+
+      <div class="relative z-20 p-6 sm:p-10 max-w-2xl space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-md uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-crown text-amber-300"></i> TOP VIEWED
+          </span>
+          <span id="heroCategoryBadge" class="bg-black/60 border border-white/10 text-rose-400 text-xs px-2.5 py-1 rounded-md font-semibold">
+            <i class="fa-solid fa-video text-xs mr-1"></i> Streamtape Stream
+          </span>
+        </div>
+
+        <h1 id="heroTitle" class="text-2xl sm:text-4xl font-black text-white leading-tight tracking-tight">
+          Loading Top Video...
+        </h1>
+
+        <p id="heroDescription" class="text-gray-300 text-sm line-clamp-2 leading-relaxed">
+          The most watched video on Redroom right now.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4 text-xs text-gray-300 pt-2">
+          <span class="flex items-center gap-1 text-rose-400 font-semibold"><i class="fa-solid fa-star"></i> <span id="heroRating">98</span>% Rating</span>
+          <span>•</span>
+          <span><span id="heroViews">0</span> Views</span>
+          <span>•</span>
+          <span id="heroDuration">15:00</span>
+          <span>•</span>
+          <span class="text-gray-400">By <span id="heroUploader">Redroom Admin</span></span>
+        </div>
+
+        <div class="pt-4 flex items-center gap-3">
+          <button id="heroWatchBtn" class="btn-primary-red px-8 py-3.5 rounded-xl font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-play"></i> WATCH FULLSCREEN
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORY PILLS & CONTROLS SECTION -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-extrabold dark:text-white text-slate-900 tracking-tight flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 live-pulse"></span>
+            Explore Videos
+          </h2>
+          <span id="resultCount" class="text-xs text-gray-400 dark:text-gray-400 text-slate-500">Showing 6 Videos</span>
+        </div>
+
+        <!-- Mobile Search Bar -->
+        <div class="w-full md:hidden">
+          <input 
+            type="text" 
+            oninput="window.app.searchQuery = this.value; window.app.renderVideoGrid();"
+            placeholder="Search videos..." 
+            class="w-full bg-red-950/40 dark:bg-red-950/40 bg-slate-200 border border-rose-900/40 rounded-xl py-2 px-4 text-sm dark:text-gray-100 text-slate-800">
+        </div>
+      </div>
+
+      <!-- Filter Pills Bar -->
+      <div id="categoryPills" class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- VIDEO GRID CONTAINER -->
+    <section>
+      <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== FULL-SCREEN THEATER VIDEO PLAYER OVERLAY ==================== -->
+  <div id="playerModal" class="fixed inset-0 z-50 fullscreen-player-overlay w-full h-full flex flex-col overflow-y-auto hidden">
+    
+    <!-- Theater Top Navigation Bar -->
+    <div class="player-top-bar px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 sticky top-0 z-30">
+      <div class="flex items-center gap-4 min-w-0">
+        <button onclick="window.app.closePlayer()" class="btn-outline-red px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-2 font-bold hover:bg-rose-600 hover:text-white transition-colors">
+          <i class="fa-solid fa-arrow-left"></i> Back to Redroom
+        </button>
+        <span class="hidden sm:inline-block w-px h-5 bg-white/10 dark:bg-white/10 bg-slate-300"></span>
+        <h3 id="playerTitle" class="text-sm sm:text-base font-bold dark:text-white text-slate-900 truncate max-w-xl">Video Title</h3>
+      </div>
+      
+      <button onclick="window.app.closePlayer()" class="w-9 h-9 rounded-full bg-white/10 dark:bg-white/10 bg-slate-200 hover:bg-rose-600 text-gray-300 dark:text-gray-300 text-slate-700 hover:text-white flex items-center justify-center transition-colors shrink-0">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Theater Main Content Area -->
+    <div class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
+      
+      <!-- Streamtape Responsive 16:9 Embed Theater Frame -->
+      <div id="streamtapeIframeContainer" class="responsive-embed-theater">
+        <!-- iframe injected dynamically by JS -->
+      </div>
+
+      <!-- Video Details Bar -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
+        
+        <!-- Left Column: Channel, Reactions, Description -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- Channel Info & Actions (Download, Like, Dislike, Share) -->
+          <div class="flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl glass-card border shadow-lg">
+            <div class="flex items-center gap-3">
+              <img id="playerUploaderAvatar" src="" class="w-11 h-11 rounded-full object-cover border border-rose-500/40">
+              <div>
+                <span id="playerUploader" class="font-bold dark:text-white text-slate-900 text-sm block">Uploader</span>
+                <div class="flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500">
+                  <span id="playerViews">0 Views</span>
+                  <span>•</span>
+                  <span id="playerUploadDate">Date</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="window.app.downloadVideo()" class="btn-primary-red px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 font-bold shadow-md">
+                <i class="fa-solid fa-download"></i> Download Video
+              </button>
+
+              <button onclick="window.app.toggleLike()" class="btn-outline-red px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 font-semibold">
+                <i class="fa-solid fa-thumbs-up"></i>
+                <span id="playerLikeCount">0</span>
+              </button>
+              <button onclick="window.app.toggleDislike()" class="btn-outline-red px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 font-semibold">
+                <i class="fa-solid fa-thumbs-down"></i>
+                <span id="playerDislikeCount">0</span>
+              </button>
+              <button onclick="window.app.copyShareLink()" class="btn-outline-red px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 font-bold">
+                <i class="fa-solid fa-share-nodes"></i> Share
+              </button>
+            </div>
+          </div>
+
+          <!-- Description Box -->
+          <div class="p-5 rounded-2xl glass-card text-sm space-y-2">
+            <div class="flex items-center justify-between text-xs text-rose-500 font-semibold mb-1">
+              <span>Category: <strong id="playerCategory" class="dark:text-white text-slate-900">General</strong></span>
+              <span>Player: Streamtape Full Theater</span>
+            </div>
+            <p id="playerDescription" class="text-xs sm:text-sm dark:text-gray-300 text-slate-600 leading-relaxed"></p>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Recommended Videos -->
+        <div class="space-y-4">
+          <h4 class="font-extrabold dark:text-white text-slate-900 text-base flex items-center gap-2">
+            <i class="fa-solid fa-fire text-rose-500"></i> Up Next
+          </h4>
+          <div id="recommendedList" class="space-y-4">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="mt-auto bg-black/60 dark:bg-black/60 bg-slate-200 border-t border-rose-900/30 dark:border-rose-900/30 border-slate-300 py-8 text-xs text-gray-500 dark:text-gray-500 text-slate-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold dark:text-white text-slate-900 text-sm">RED<span class="text-rose-500">ROOM</span></span>
+        <span>• 18+ Adult Entertainment Platform</span>
+      </div>
+      <div class="flex items-center gap-4 text-[11px]">
+        <span class="text-rose-400 font-semibold"><i class="fa-solid fa-chart-line mr-1"></i> <span id="footerSiteViews">1,420,500</span> Total Platform Visits</span>
+        <a href="#" class="hover:text-rose-500">18+ Compliance</a>
+        <a href="#" class="hover:text-rose-500">Privacy Policy</a>
+      </div>
+      <p>&copy; 2026 Redroom VOD. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

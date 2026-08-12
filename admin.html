@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redroom Admin Portal</title>
+
+  <!-- Redroom SVG Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ff0055'/><polygon points='38,25 75,50 38,75' fill='%23ffffff'/></svg>">
+
+  <!-- Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Clean Normal Professional Admin Styling (No Neon Effects) */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+
+    .admin-sidebar {
+      background-color: #1e293b;
+      border-right: 1px solid #334155;
+    }
+
+    .admin-header {
+      background-color: #1e293b;
+      border-bottom: 1px solid #334155;
+    }
+
+    .admin-nav-btn {
+      color: #94a3b8;
+      transition: all 0.2s ease;
+    }
+
+    .admin-nav-btn:hover {
+      background-color: #334155;
+      color: #ffffff;
+    }
+
+    .admin-nav-btn.active {
+      background-color: #e11d48;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .admin-stat-card {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table th {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .admin-table td {
+      border-bottom: 1px solid #334155;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #e2e8f0;
+    }
+
+    .admin-table tr:hover {
+      background-color: #1e293b;
+    }
+
+    .admin-input {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      color: #ffffff;
+      border-radius: 6px;
+      padding: 10px 14px;
+      width: 100%;
+      font-size: 14px;
+    }
+
+    .admin-input:focus {
+      outline: none;
+      border-color: #e11d48;
+    }
+
+    .btn-admin-primary {
+      background-color: #e11d48;
+      color: #ffffff;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-admin-primary:hover {
+      background-color: #be123c;
+    }
+
+    .preview-aspect {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preview-aspect iframe,
+    .preview-aspect img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+  <!-- LOGIN CONTAINER (Default if password not entered) -->
+  <div id="adminAuthContainer" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950">
+    <div class="bg-slate-900 w-full max-w-md p-8 rounded-xl border border-slate-800 shadow-2xl text-center">
+      <div
+        class="w-14 h-14 rounded-full bg-rose-600/20 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+        <i class="fa-solid fa-lock text-2xl"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-white mb-1">Redroom Admin Portal</h2>
+      <p class="text-xs text-slate-400 mb-6">Enter administrator password to unlock management panel.</p>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <input type="password" id="adminPwInput" placeholder="Enter Password" required
+            class="admin-input text-center tracking-widest text-lg">
+        </div>
+        <button type="submit" class="btn-admin-primary w-full text-sm">
+          Unlock Admin Panel
+        </button>
+      </form>
+
+      <div class="mt-6 text-xs text-slate-500">
+        <a href="index.html" class="hover:text-slate-300">← Back to Main Website</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN ADMIN DASHBOARD LAYOUT -->
+  <div id="adminDashboardLayout" class="hidden flex-1 flex flex-col md:flex-row min-h-screen">
+
+    <!-- Left Navigation Sidebar -->
+    <aside class="w-full md:w-64 admin-sidebar flex flex-col shrink-0">
+      <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded bg-rose-600 flex items-center justify-center text-white font-bold text-sm">
+            R
+          </div>
+          <span class="font-bold text-white tracking-wide">Redroom Admin</span>
+        </div>
+        <a href="index.html" title="Go to Website" class="text-slate-400 hover:text-white text-xs">
+          <i class="fa-solid fa-external-link"></i>
+        </a>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="p-4 space-y-1 flex-1">
+        <button id="tabBtn-stats" onclick="switchTab('stats')"
+          class="admin-nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-chart-pie w-5"></i>
+          <span>Statistics</span>
+        </button>
+
+        <button id="tabBtn-add" onclick="switchTab('add')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-plus-circle w-5"></i>
+          <span>Add Video</span>
+        </button>
+
+        <button id="tabBtn-categories" onclick="switchTab('categories')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-tags w-5"></i>
+          <span>Category Manager</span>
+        </button>
+
+        <button id="tabBtn-view" onclick="switchTab('view')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-list-check w-5"></i>
+          <span>View All Videos</span>
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800">
+        <button onclick="handleAdminLogout()"
+          class="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-slate-800 rounded-lg">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout Session</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-950">
+
+      <!-- Top Bar -->
+      <header class="admin-header px-8 py-4 flex items-center justify-between">
+        <h1 id="pageTitle" class="text-lg font-bold text-white">System Statistics</h1>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>System Online</span>
+          <span>•</span>
+          <span>PW: 911</span>
+        </div>
+      </header>
+
+      <!-- TAB 1: ADVANCED STATISTICS TAB -->
+      <section id="tabContent-stats" class="p-8 space-y-6">
+        <!-- Top Metric Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="admin-stat-card p-5">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Total Videos</span>
+            <div id="statTotalVideos" class="text-3xl font-bold text-white mt-2">0</div>
+            <span class="text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-arrow-up mr-1"></i> Active in
+              Database</span>
+          </div>
+          <div class="admin-stat-card p-5">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Total Platform Views</span>
+            <div id="statTotalViews" class="text-3xl font-bold text-rose-500 mt-2">0</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Accumulated views</span>
+          </div>
+          <div class="admin-stat-card p-5">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Streamtape Embed Health</span>
+            <div id="statEmbeds" class="text-3xl font-bold text-emerald-400 mt-2">100%</div>
+            <span class="text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-circle-check mr-1"></i> Player
+              Active</span>
+          </div>
+          <div class="admin-stat-card p-5">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Active Categories</span>
+            <div id="statCategories" class="text-3xl font-bold text-amber-400 mt-2">0</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">Filters enabled</span>
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Category Distribution Bars -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between">
+              <span>Category Distribution</span>
+              <i class="fa-solid fa-chart-bar text-slate-500"></i>
+            </h3>
+            <div id="categoryBreakdownBars" class="space-y-3 pt-2">
+              <!-- Injected by admin.js -->
+            </div>
+          </div>
+
+          <!-- Top Performing Video -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between">
+              <span>Top Trending Video</span>
+              <i class="fa-solid fa-trophy text-amber-400"></i>
+            </h3>
+            <div id="topVideoHighlight" class="pt-2">
+              <!-- Injected by admin.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-3">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">System Audit & Status Log</h3>
+          <div class="overflow-x-auto">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Source</th>
+                  <th>Timestamp</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-medium text-white">Streamtape URL Parser</td>
+                  <td>Engine</td>
+                  <td>Just now</td>
+                  <td><span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 rounded text-xs">Active</span></td>
+                </tr>
+                <tr>
+                  <td class="font-medium text-white">Admin Authentication Session</td>
+                  <td>PW Verification (911)</td>
+                  <td>Active Session</td>
+                  <td><span class="px-2 py-0.5 bg-blue-950 text-blue-400 rounded text-xs">Granted</span></td>
+                </tr>
+                <tr>
+                  <td class="font-medium text-white">Local Storage Database Sync</td>
+                  <td>Browser Cache</td>
+                  <td>Synced</td>
+                  <td><span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 rounded text-xs">Synced</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: ADD VIDEO TAB (With Category Dropdown & 2-column Live Preview) -->
+      <section id="tabContent-add" class="p-8 hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          <!-- Left Column: Input Form -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h2 class="text-base font-bold text-white pb-3 border-b border-slate-800">Publish Streamtape Video</h2>
+
+            <form onsubmit="handlePublishVideo(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Streamtape Video Link *</label>
+                <input type="url" id="addStreamtapeUrl" oninput="updateAddPreview()"
+                  placeholder="https://streamtape.com/v/v0bkyxx96Xl1Z3/..." required class="admin-input">
+                <span class="text-[11px] text-slate-500 mt-1 block">Supports share links (/v/...) or embed URLs
+                  (/e/...)</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Video Title *</label>
+                <input type="text" id="addTitle" oninput="updateAddPreview()" placeholder="Enter full video title"
+                  required class="admin-input">
+              </div>
+
+              <!-- Category Select Dropdown -->
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Select Category</label>
+                <select id="addCategorySelect" class="admin-input">
+                  <!-- Dynamically populated by admin.js -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Video Duration</label>
+                <input type="text" id="addDuration" placeholder="e.g. 24:15 Mins" class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail Image URL</label>
+                <input type="url" id="addThumbnail" oninput="updateAddPreview()"
+                  placeholder="https://images.unsplash.com/..." class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Description (Optional)</label>
+                <textarea id="addDescription" rows="3" placeholder="Add video details..."
+                  class="admin-input"></textarea>
+              </div>
+
+              <button type="submit" class="btn-admin-primary w-full text-sm mt-2">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Save & Publish Video
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Live Video Card & Embed Preview -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h3
+              class="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between pb-3 border-b border-slate-800">
+              <span>Live Card & Embed Preview</span>
+              <span class="text-xs text-emerald-400 font-medium"><i class="fa-solid fa-eye mr-1"></i> Real-time</span>
+            </h3>
+
+            <!-- Card Preview Box -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-lg p-4 space-y-4">
+
+              <!-- Video Frame Preview -->
+              <div id="previewEmbedFrame" class="preview-aspect">
+                <img id="previewThumbImg"
+                  src="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80">
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div
+                    class="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-play ml-0.5"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Title & Meta Preview -->
+              <div>
+                <h4 id="previewTitleText" class="font-bold text-white text-base line-clamp-2">Video Title Preview</h4>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-2">
+                  <span>Redroom Admin</span>
+                  <span>•</span>
+                  <span>1 View</span>
+                  <span>•</span>
+                  <span>Just now</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 3: CATEGORY MANAGER TAB -->
+      <section id="tabContent-categories" class="p-8 hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          <!-- Add Category Form -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h2 class="text-base font-bold text-white pb-3 border-b border-slate-800">Add New Category</h2>
+
+            <form onsubmit="handleAddCategory(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Category Name *</label>
+                <input type="text" id="newCategoryInput" placeholder="e.g. MILF, Lesbian, Hentai, BDSM, Asian..."
+                  required class="admin-input">
+              </div>
+
+              <button type="submit" class="btn-admin-primary w-full text-sm">
+                <i class="fa-solid fa-plus-circle mr-2"></i> Add Custom Category
+              </button>
+            </form>
+          </div>
+
+          <!-- Existing Categories List -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider pb-3 border-b border-slate-800">
+              Active Categories List
+            </h3>
+
+            <div id="adminCategoryList" class="flex flex-wrap gap-2 pt-2">
+              <!-- Injected by admin.js -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 4: VIEW ALL VIDEOS TAB (Clicking any video row opens Statistics Drawer) -->
+      <section id="tabContent-view" class="p-8 hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+          <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-white">All Published Videos</h2>
+              <span class="text-[11px] text-slate-400 block">Click any video row to view detailed individual
+                statistics</span>
+            </div>
+            <span id="videoCountBadge" class="text-xs text-slate-400">0 Videos</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Thumbnail & Title</th>
+                  <th>Category</th>
+                  <th>Views</th>
+                  <th>Streamtape Link</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody">
+                <!-- Injected by admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- INDIVIDUAL VIDEO STATISTICS MODAL / DRAWER -->
+  <div id="videoStatsModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm hidden">
+    <div class="bg-slate-900 w-full max-w-xl p-6 rounded-xl border border-slate-800 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-rose-500 text-lg"></i>
+          <h3 class="text-base font-bold text-white">Individual Video Analytics</h3>
+        </div>
+        <button onclick="closeVideoStatsModal()" class="text-slate-400 hover:text-white"><i
+            class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="flex items-start gap-4 p-4 bg-slate-950 rounded-lg border border-slate-800">
+        <img id="statsModalThumb" class="w-24 aspect-video object-cover rounded bg-black">
+        <div class="flex-1 min-w-0">
+          <h4 id="statsModalTitle" class="font-bold text-white text-sm line-clamp-2 mb-1">Title</h4>
+          <span id="statsModalCategory"
+            class="px-2 py-0.5 bg-rose-950 text-rose-400 rounded text-xs font-semibold">Category</span>
+        </div>
+      </div>
+
+      <!-- Video Stat Indicators -->
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="p-3 bg-slate-950 rounded border border-slate-800">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Total Views</span>
+          <strong id="statsModalViews" class="text-lg font-bold text-white">0</strong>
+        </div>
+        <div class="p-3 bg-slate-950 rounded border border-slate-800">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Likes Count</span>
+          <strong id="statsModalLikes" class="text-lg font-bold text-emerald-400">0</strong>
+        </div>
+        <div class="p-3 bg-slate-950 rounded border border-slate-800">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Approval Rating</span>
+          <strong id="statsModalRating" class="text-lg font-bold text-amber-400">98%</strong>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs text-slate-300 bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <div class="flex justify-between py-1 border-b border-slate-800/50">
+          <span class="text-slate-500">Streamtape Source URL</span>
+          <span id="statsModalUrl" class="font-mono text-slate-300 truncate max-w-xs">https://...</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-800/50">
+          <span class="text-slate-500">Uploader</span>
+          <span id="statsModalUploader" class="font-medium text-slate-200">Redroom Admin</span>
+        </div>
+        <div class="flex justify-between py-1">
+          <span class="text-slate-500">Player Operational Health</span>
+          <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Streamtape
+            Active</span>
+        </div>
+      </div>
+
+      <button onclick="closeVideoStatsModal()"
+        class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+        Close Analytics
+      </button>
+    </div>
+  </div>
+
+  <!-- EDIT VIDEO MODAL -->
+  <div id="editModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="bg-slate-900 w-full max-w-lg p-6 rounded-lg border border-slate-800 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Edit Video Details</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i
+            class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form onsubmit="handleSaveEdit(event)" class="space-y-4">
+        <input type="hidden" id="editVideoId">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Title</label>
+          <input type="text" id="editTitle" required class="admin-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Category</label>
+          <select id="editCategorySelect" class="admin-input">
+            <!-- Dynamically populated by admin.js -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Streamtape URL</label>
+          <input type="url" id="editStreamtapeUrl" required class="admin-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail URL</label>
+          <input type="url" id="editThumbnail" class="admin-input">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeEditModal()"
+            class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+            Cancel
+          </button>
+          <button type="submit" class="btn-admin-primary w-full text-xs">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+
+</html>
