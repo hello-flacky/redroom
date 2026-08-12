@@ -1,4 +1,4 @@
-# Redroom - Modern 18+ Video Streaming & Playlist Platform
+# Redroom - Modern 18+ Video Streaming Platform
 
 **Redroom** යනු HTML5, Tailwind CSS, JavaScript සහ Firebase Database (Firestore) භාවිතයෙන් නිර්මාණය කරන ලද modern 18+ Video Streaming Web Application එකකි. 
 
