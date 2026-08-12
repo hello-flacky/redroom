@@ -30,6 +30,8 @@ class RedroomApp {
     this.playlistVideoIndex = 0; // Current index in playlist playback
     this.currentPage = 1;
     this.itemsPerPage = 20;
+    this.currentPlaylistPage = 1;
+    this.playlistsPerPage = 5;
     this.init();
     this.fetchDataFromFirebase();
   }
@@ -752,7 +754,13 @@ class RedroomApp {
     section.classList.remove('hidden');
     if (countEl) countEl.textContent = `${activePlaylists.length} playlist${activePlaylists.length !== 1 ? 's' : ''}`;
 
-    container.innerHTML = activePlaylists.map(pl => {
+    const totalPages = Math.ceil(activePlaylists.length / this.playlistsPerPage);
+    if (this.currentPlaylistPage > totalPages && totalPages > 0) this.currentPlaylistPage = totalPages;
+    
+    const startIndex = (this.currentPlaylistPage - 1) * this.playlistsPerPage;
+    const paginatedPlaylists = activePlaylists.slice(startIndex, startIndex + this.playlistsPerPage);
+
+    container.innerHTML = paginatedPlaylists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
       const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
@@ -778,6 +786,83 @@ class RedroomApp {
         </div>
       `;
     }).join('');
+    
+    this.renderPlaylistPagination(totalPages);
+  }
+
+  renderPlaylistPagination(totalPages) {
+    const container = document.getElementById('playlistPaginationContainer');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="flex items-center gap-1 sm:gap-2 bg-slate-100 dark:bg-black/20 p-1.5 sm:p-2 rounded-full border border-slate-300 dark:border-white/5">
+        <button onclick="window.app.changePlaylistPage(${this.currentPlaylistPage - 1})" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed" ${this.currentPlaylistPage === 1 ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-left text-[10px] sm:text-xs"></i>
+        </button>
+        <span class="text-[10px] sm:text-xs font-semibold dark:text-gray-400 text-slate-500 px-1 sm:px-2">
+          ${this.currentPlaylistPage} / ${totalPages}
+        </span>
+        <button onclick="window.app.changePlaylistPage(${this.currentPlaylistPage + 1})" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/5 hover:bg-rose-600 dark:hover:bg-rose-600 text-slate-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed" ${this.currentPlaylistPage === totalPages ? 'disabled' : ''}>
+          <i class="fa-solid fa-chevron-right text-[10px] sm:text-xs"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  changePlaylistPage(newPage) {
+    this.currentPlaylistPage = newPage;
+    this.renderPlaylists();
+  }
+
+  openAllPlaylists() {
+    const modal = document.getElementById('allPlaylistsModal');
+    const grid = document.getElementById('allPlaylistsGrid');
+    if (!modal || !grid) return;
+    
+    const activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+    
+    grid.innerHTML = activePlaylists.map(pl => {
+      const vidCount = (pl.videoIds || []).length;
+      const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
+      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+
+      return `
+        <div class="cursor-pointer group flex flex-col h-full" onclick="window.app.closeAllPlaylists(); window.app.openPlaylist('${pl.id}')">
+          <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20 w-full">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-2 left-2 right-2">
+              <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                <i class="fa-solid fa-layer-group text-[8px] sm:text-[10px]"></i> ${vidCount} vids
+              </span>
+            </div>
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="w-8 h-8 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+              </div>
+            </div>
+          </div>
+          <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${pl.name}</h3>
+          <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${pl.description || vidCount + ' videos'}</p>
+        </div>
+      `;
+    }).join('');
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAllPlaylists() {
+    const modal = document.getElementById('allPlaylistsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
   }
 
   openPlaylist(playlistId) {
