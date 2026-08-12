@@ -20,11 +20,14 @@ const INITIAL_VIDEOS = [];
 class RedroomApp {
   constructor() {
     this.videos = [];
+    this.playlists = [];
     this.categories = [...DEFAULT_CATEGORIES];
     this.siteViews = this.loadSiteViews();
     this.currentCategory = 'All';
     this.searchQuery = '';
     this.currentVideo = null;
+    this.activePlaylist = null; // Currently viewing playlist
+    this.playlistVideoIndex = 0; // Current index in playlist playback
     this.init();
     this.fetchDataFromFirebase();
   }
@@ -63,10 +66,21 @@ class RedroomApp {
       this.videos = vids.sort((a, b) => b.createdAt - a.createdAt);
       this.renderHeroSection();
       this.renderVideoGrid();
+      this.renderPlaylists(); // Re-render playlists when videos change (for thumbnails)
       this.hideLoader();
     }, (error) => {
       console.error('Error fetching videos:', error);
       this.hideLoader();
+    });
+
+    // Fetch Playlists Real-time
+    db.collection('playlists').onSnapshot(snapshot => {
+      const pls = [];
+      snapshot.forEach(doc => {
+        pls.push({ id: doc.id, ...doc.data() });
+      });
+      this.playlists = pls.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      this.renderPlaylists();
     });
 
     // Sync Global Site Views
@@ -350,6 +364,11 @@ class RedroomApp {
     if (!grid) return;
 
     let filtered = this.videos.filter(vid => {
+      // If viewing a playlist, only show videos in that playlist
+      if (this.activePlaylist) {
+        const plVideoIds = this.activePlaylist.videoIds || [];
+        if (!plVideoIds.includes(vid.id)) return false;
+      }
       const matchesCat = (this.currentCategory === 'All') || (vid.category === this.currentCategory);
       const matchesSearch = !this.searchQuery || 
         vid.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
@@ -357,6 +376,13 @@ class RedroomApp {
         vid.uploader.toLowerCase().includes(this.searchQuery.toLowerCase());
       return matchesCat && matchesSearch;
     });
+
+    // If in playlist view, sort by playlist order
+    if (this.activePlaylist) {
+      const orderMap = {};
+      (this.activePlaylist.videoIds || []).forEach((id, idx) => orderMap[id] = idx);
+      filtered.sort((a, b) => (orderMap[a.id] || 0) - (orderMap[b.id] || 0));
+    }
 
     if (resultCount) {
       resultCount.textContent = `Showing ${filtered.length} Videos`;
@@ -567,7 +593,18 @@ class RedroomApp {
     const recList = document.getElementById('recommendedList');
     if (!recList || !this.currentVideo) return;
 
-    const recommended = this.videos.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
+    let recommended;
+    if (this.activePlaylist) {
+      // In playlist mode: show next videos in the playlist
+      const plVids = (this.activePlaylist.videoIds || [])
+        .map(id => this.videos.find(v => v.id === id))
+        .filter(Boolean);
+      const currentIdx = plVids.findIndex(v => v.id === this.currentVideo.id);
+      recommended = plVids.filter((v, i) => i !== currentIdx).slice(0, 4);
+    } else {
+      recommended = this.videos.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
+    }
+
     recList.innerHTML = recommended.map(v => `
       <div class="flex gap-2 sm:gap-3 cursor-pointer group" onclick="window.app.openPlayer('${v.id}')">
         <div class="w-24 sm:w-28 aspect-video rounded-lg overflow-hidden relative bg-black shrink-0">
@@ -620,6 +657,7 @@ class RedroomApp {
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         this.searchQuery = e.target.value.trim();
+        if (this.activePlaylist) this.exitPlaylistView(); // Exit playlist view when searching
         this.renderVideoGrid();
       });
     }
@@ -642,6 +680,116 @@ class RedroomApp {
         this.closePlayer();
       }
     });
+  }
+
+  // ==============================
+  // PLAYLIST VIEWER METHODS
+  // ==============================
+
+  renderPlaylists() {
+    const section = document.getElementById('playlistsSection');
+    const container = document.getElementById('playlistCardsRow');
+    const countEl = document.getElementById('playlistTotalCount');
+    if (!section || !container) return;
+
+    // Only show playlists that have at least 1 video
+    const activePlaylists = this.playlists.filter(pl => (pl.videoIds || []).length > 0);
+
+    if (activePlaylists.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    if (countEl) countEl.textContent = `${activePlaylists.length} playlist${activePlaylists.length !== 1 ? 's' : ''}`;
+
+    container.innerHTML = activePlaylists.map(pl => {
+      const vidCount = (pl.videoIds || []).length;
+      const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
+      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+
+      return `
+        <div class="flex-shrink-0 w-40 sm:w-52 cursor-pointer group" onclick="window.app.openPlaylist('${pl.id}')">
+          <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute bottom-2 left-2 right-2">
+              <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                <i class="fa-solid fa-layer-group text-[8px] sm:text-[10px]"></i> ${vidCount} videos
+              </span>
+            </div>
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+              </div>
+            </div>
+          </div>
+          <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors truncate">${pl.name}</h3>
+          <p class="text-[9px] sm:text-[11px] text-gray-400 truncate">${pl.description || vidCount + ' videos'}</p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  openPlaylist(playlistId) {
+    const playlist = this.playlists.find(p => p.id === playlistId);
+    if (!playlist) return;
+
+    this.activePlaylist = playlist;
+    this.playlistVideoIndex = 0;
+    this.currentCategory = 'All';
+    this.searchQuery = '';
+
+    // Update UI: hide hero, playlists section, main browse section; show playlist view
+    const heroSection = document.getElementById('heroSection');
+    const playlistsSection = document.getElementById('playlistsSection');
+    const mainBrowse = document.getElementById('mainBrowseSection');
+    const playlistView = document.getElementById('playlistViewSection');
+
+    if (heroSection) heroSection.classList.add('hidden');
+    if (playlistsSection) playlistsSection.classList.add('hidden');
+    if (mainBrowse) mainBrowse.classList.add('hidden');
+    if (playlistView) playlistView.classList.remove('hidden');
+
+    // Populate playlist view info
+    const nameEl = document.getElementById('playlistViewName');
+    const descEl = document.getElementById('playlistViewDesc');
+    const countEl = document.getElementById('playlistViewCount');
+
+    if (nameEl) nameEl.textContent = playlist.name;
+    if (descEl) descEl.textContent = playlist.description || '';
+    if (countEl) countEl.textContent = `${(playlist.videoIds || []).length} videos`;
+
+    this.renderVideoGrid();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  exitPlaylistView() {
+    this.activePlaylist = null;
+    this.playlistVideoIndex = 0;
+
+    // Restore UI
+    const mainBrowse = document.getElementById('mainBrowseSection');
+    const playlistView = document.getElementById('playlistViewSection');
+
+    if (mainBrowse) mainBrowse.classList.remove('hidden');
+    if (playlistView) playlistView.classList.add('hidden');
+
+    this.renderHeroSection();
+    this.renderPlaylists();
+    this.renderCategoryPills();
+    this.renderVideoGrid();
+  }
+
+  playPlaylistAll() {
+    if (!this.activePlaylist) return;
+    const videoIds = this.activePlaylist.videoIds || [];
+    if (videoIds.length === 0) {
+      this.showToast('This playlist has no videos.', 'error');
+      return;
+    }
+    this.playlistVideoIndex = 0;
+    this.openPlayer(videoIds[0]);
   }
 }
 

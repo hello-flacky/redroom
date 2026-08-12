@@ -10,8 +10,10 @@ const DEFAULT_VIDEOS = [];
 class RedroomAdmin {
   constructor() {
     this.videos = [];
+    this.playlists = [];
     this.categories = [...DEFAULT_CATEGORIES];
     this.currentTab = 'stats';
+    this.selectedPlaylistVideoIds = new Set();
     this.init();
     this.fetchDataFromFirebase();
   }
@@ -38,8 +40,21 @@ class RedroomAdmin {
       this.videos = vids.sort((a, b) => b.createdAt - a.createdAt);
       this.updateAdvancedStats();
       this.renderTable();
+      this.renderPlaylistVideoChecklist();
     }, (error) => {
       console.error('Error fetching videos from Admin:', error);
+    });
+
+    // Fetch Playlists Real-time
+    db.collection('playlists').onSnapshot(snapshot => {
+      const pls = [];
+      snapshot.forEach(doc => {
+        pls.push({ id: doc.id, ...doc.data() });
+      });
+      this.playlists = pls.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      this.renderAdminPlaylists();
+    }, (error) => {
+      console.error('Error fetching playlists:', error);
     });
   }
 
@@ -85,12 +100,13 @@ class RedroomAdmin {
 
   switchTab(tabName) {
     this.currentTab = tabName;
-    const tabs = ['stats', 'add', 'categories', 'view'];
+    const tabs = ['stats', 'add', 'categories', 'view', 'playlists'];
     const titleMap = {
       stats: 'System Statistics',
       add: 'Add New Streamtape Video',
       categories: 'Category Manager',
-      view: 'Manage & Edit Videos'
+      view: 'Manage & Edit Videos',
+      playlists: 'Playlist Manager'
     };
 
     tabs.forEach(t => {
@@ -113,6 +129,10 @@ class RedroomAdmin {
     if (tabName === 'categories') this.renderCategories();
     if (tabName === 'view') this.renderTable();
     if (tabName === 'add') this.populateCategoryDropdowns();
+    if (tabName === 'playlists') {
+      this.renderPlaylistVideoChecklist();
+      this.renderAdminPlaylists();
+    }
   }
 
   /**
@@ -343,6 +363,144 @@ class RedroomAdmin {
       });
     }
   }
+
+  // ==============================
+  // PLAYLIST MANAGEMENT METHODS
+  // ==============================
+
+  renderPlaylistVideoChecklist(filter = '') {
+    const container = document.getElementById('playlistVideoChecklist');
+    if (!container) return;
+
+    const search = filter.toLowerCase().trim();
+    const filtered = search
+      ? this.videos.filter(v => v.title.toLowerCase().includes(search) || (v.category || '').toLowerCase().includes(search))
+      : this.videos;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<p class="text-xs text-slate-500 italic p-2">${search ? 'No videos match your search.' : 'No videos uploaded yet. Upload videos first.'}</p>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(v => {
+      const checked = this.selectedPlaylistVideoIds.has(v.id) ? 'checked' : '';
+      return `
+        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-900 cursor-pointer transition-colors">
+          <input type="checkbox" value="${v.id}" ${checked} onchange="adminApp.togglePlaylistVideo('${v.id}', this.checked)"
+            class="w-4 h-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500 bg-slate-800 shrink-0 accent-rose-500">
+          <img src="${v.thumbnail}" class="w-10 h-7 object-cover rounded bg-slate-800 shrink-0">
+          <div class="min-w-0 flex-1">
+            <span class="text-xs text-white font-medium block truncate">${v.title}</span>
+            <span class="text-[10px] text-slate-500">${v.category || 'General'} • ${v.duration || ''}</span>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    this.updateSelectedCount();
+  }
+
+  filterPlaylistVideos(query) {
+    this.renderPlaylistVideoChecklist(query);
+  }
+
+  togglePlaylistVideo(videoId, isChecked) {
+    if (isChecked) {
+      this.selectedPlaylistVideoIds.add(videoId);
+    } else {
+      this.selectedPlaylistVideoIds.delete(videoId);
+    }
+    this.updateSelectedCount();
+  }
+
+  updateSelectedCount() {
+    const el = document.getElementById('selectedVideoCount');
+    if (el) el.textContent = this.selectedPlaylistVideoIds.size;
+  }
+
+  savePlaylist(playlistData) {
+    const docId = playlistData.id;
+    db.collection('playlists').doc(docId).set(playlistData, { merge: true })
+      .then(() => {
+        alert(playlistData._isEdit ? 'Playlist updated successfully!' : 'Playlist created successfully!');
+        resetPlaylistForm();
+      })
+      .catch(error => {
+        alert('Error saving playlist: ' + error.message);
+      });
+  }
+
+  deletePlaylist(playlistId) {
+    if (confirm('Are you sure you want to delete this playlist? Videos will NOT be deleted.')) {
+      db.collection('playlists').doc(playlistId).delete().then(() => {
+        alert('Playlist deleted.');
+      }).catch(err => {
+        alert('Error deleting playlist: ' + err.message);
+      });
+    }
+  }
+
+  editPlaylist(playlistId) {
+    const pl = this.playlists.find(p => p.id === playlistId);
+    if (!pl) return;
+
+    document.getElementById('editPlaylistId').value = pl.id;
+    document.getElementById('playlistName').value = pl.name || '';
+    document.getElementById('playlistDescription').value = pl.description || '';
+    document.getElementById('playlistThumbnail').value = pl.thumbnail || '';
+
+    // Set selected video IDs
+    this.selectedPlaylistVideoIds = new Set(pl.videoIds || []);
+    this.renderPlaylistVideoChecklist();
+
+    // Update form UI to edit mode
+    const formTitle = document.getElementById('playlistFormTitle');
+    if (formTitle) formTitle.innerHTML = '<i class="fa-solid fa-pen-to-square mr-2 text-amber-400"></i>Edit Playlist';
+    const btnText = document.getElementById('playlistSubmitBtnText');
+    if (btnText) btnText.textContent = 'Save Changes';
+  }
+
+  renderAdminPlaylists() {
+    const container = document.getElementById('adminPlaylistList');
+    const badge = document.getElementById('playlistCountBadge');
+    if (!container) return;
+
+    if (badge) badge.textContent = `${this.playlists.length} Playlists`;
+
+    if (this.playlists.length === 0) {
+      container.innerHTML = `<p class="text-xs text-slate-500 italic">No playlists created yet. Create your first playlist!</p>`;
+      return;
+    }
+
+    container.innerHTML = this.playlists.map(pl => {
+      const vidCount = (pl.videoIds || []).length;
+      const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
+      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&auto=format&fit=crop&q=80');
+
+      return `
+        <div class="flex items-center gap-3 p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors">
+          <div class="relative w-20 sm:w-24 aspect-video rounded-lg overflow-hidden bg-black shrink-0">
+            <img src="${thumbSrc}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 px-1.5 py-0.5 rounded">${vidCount} videos</span>
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-bold text-white truncate">${pl.name}</h4>
+            <p class="text-[10px] sm:text-xs text-slate-400 truncate">${pl.description || 'No description'}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="adminApp.editPlaylist('${pl.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs" title="Edit">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="adminApp.deletePlaylist('${pl.id}')" class="p-2 bg-rose-950 hover:bg-rose-600 border border-rose-800 text-rose-300 hover:text-white rounded-lg text-xs" title="Delete">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 const adminApp = new RedroomAdmin();
@@ -486,4 +644,56 @@ function handleSaveEdit(e) {
     thumbnail: formatThumbnailUrl(document.getElementById('editThumbnail').value.trim())
   };
   adminApp.saveEdit(updated);
+}
+
+// ================================
+// PLAYLIST FORM HANDLER FUNCTIONS
+// ================================
+
+function handleSavePlaylist(e) {
+  e.preventDefault();
+  const editId = document.getElementById('editPlaylistId').value;
+  const name = document.getElementById('playlistName').value.trim();
+  const description = document.getElementById('playlistDescription').value.trim();
+  let thumbnail = document.getElementById('playlistThumbnail').value.trim();
+  thumbnail = formatThumbnailUrl(thumbnail) || '';
+
+  const videoIds = Array.from(adminApp.selectedPlaylistVideoIds);
+
+  if (videoIds.length === 0) {
+    alert('Please select at least one video for the playlist.');
+    return;
+  }
+
+  const playlistData = {
+    id: editId || ('pl-' + Date.now()),
+    name: name,
+    description: description,
+    thumbnail: thumbnail,
+    videoIds: videoIds,
+    createdAt: editId ? undefined : Date.now(),
+    updatedAt: Date.now(),
+    _isEdit: !!editId
+  };
+
+  // Remove undefined fields
+  Object.keys(playlistData).forEach(k => playlistData[k] === undefined && delete playlistData[k]);
+
+  adminApp.savePlaylist(playlistData);
+}
+
+function resetPlaylistForm() {
+  document.getElementById('editPlaylistId').value = '';
+  document.getElementById('playlistName').value = '';
+  document.getElementById('playlistDescription').value = '';
+  document.getElementById('playlistThumbnail').value = '';
+  document.getElementById('playlistVideoSearch').value = '';
+
+  adminApp.selectedPlaylistVideoIds.clear();
+  adminApp.renderPlaylistVideoChecklist();
+
+  const formTitle = document.getElementById('playlistFormTitle');
+  if (formTitle) formTitle.innerHTML = '<i class="fa-solid fa-plus-circle mr-2 text-rose-500"></i>Create New Playlist';
+  const btnText = document.getElementById('playlistSubmitBtnText');
+  if (btnText) btnText.textContent = 'Create Playlist';
 }

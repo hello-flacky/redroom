@@ -257,6 +257,12 @@
           <i class="fa-solid fa-list-check w-5"></i>
           <span>View All Videos</span>
         </button>
+
+        <button id="tabBtn-playlists" onclick="switchTab('playlists')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-layer-group w-5"></i>
+          <span>Playlists</span>
+        </button>
       </nav>
 
       <div class="p-4 border-t border-slate-800">
@@ -532,6 +538,77 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: PLAYLIST MANAGER TAB -->
+      <section id="tabContent-playlists" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+
+          <!-- Left Column: Create / Edit Playlist Form -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 space-y-4">
+            <h2 id="playlistFormTitle" class="text-base font-bold text-white pb-3 border-b border-slate-800">
+              <i class="fa-solid fa-plus-circle mr-2 text-rose-500"></i>Create New Playlist
+            </h2>
+
+            <form onsubmit="handleSavePlaylist(event)" class="space-y-4">
+              <input type="hidden" id="editPlaylistId" value="">
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Playlist Name *</label>
+                <input type="text" id="playlistName" placeholder="e.g. Best MILF Collection, Top Trending..." required class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Playlist Description</label>
+                <textarea id="playlistDescription" rows="2" placeholder="Short description for this playlist..." class="admin-input"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Cover Thumbnail URL</label>
+                <input type="text" id="playlistThumbnail" placeholder="https://... (leave empty to use first video thumbnail)" class="admin-input">
+              </div>
+
+              <!-- Video Picker Checklist -->
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-2">Select Videos for Playlist</label>
+                <div class="relative mb-2">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                  <input type="text" id="playlistVideoSearch" oninput="adminApp.filterPlaylistVideos(this.value)" placeholder="Search videos..." class="admin-input pl-9 py-2 text-xs">
+                </div>
+                <div id="playlistVideoChecklist" class="max-h-52 overflow-y-auto space-y-1 border border-slate-800 rounded-lg p-2 bg-slate-950">
+                  <!-- Rendered by admin.js -->
+                  <p class="text-xs text-slate-500 italic p-2">No videos uploaded yet. Upload videos first.</p>
+                </div>
+                <span class="text-[11px] text-slate-500 mt-1 block"><span id="selectedVideoCount">0</span> videos selected</span>
+              </div>
+
+              <div class="flex gap-3 pt-1">
+                <button type="button" onclick="resetPlaylistForm()" class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+                  Clear / Cancel
+                </button>
+                <button type="submit" class="btn-admin-primary w-full text-xs">
+                  <i class="fa-solid fa-layer-group mr-1"></i> <span id="playlistSubmitBtnText">Create Playlist</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Existing Playlists -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">
+                <i class="fa-solid fa-layer-group mr-1 text-rose-500"></i> Active Playlists
+              </h3>
+              <span id="playlistCountBadge" class="text-xs text-slate-400">0 Playlists</span>
+            </div>
+
+            <div id="adminPlaylistList" class="space-y-3">
+              <!-- Rendered by admin.js -->
+              <p class="text-xs text-slate-500 italic">No playlists created yet. Create your first playlist!</p>
+            </div>
+          </div>
+
         </div>
       </section>
 
