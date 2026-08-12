@@ -475,7 +475,7 @@ class RedroomAdmin {
     container.innerHTML = this.playlists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
-      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&auto=format&fit=crop&q=80');
+      const thumbSrc = pl.thumbnail || (firstVid ? firstVid.thumbnail : './assets/Thumbnail.png');
 
       return `
         <div class="flex items-center gap-3 p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors">
@@ -542,7 +542,7 @@ function updateAddPreview() {
   const rawUrl = document.getElementById('addStreamtapeUrl').value.trim();
   const title = document.getElementById('addTitle').value.trim() || 'Video Title Preview';
   let thumb = document.getElementById('addThumbnail').value.trim();
-  thumb = formatThumbnailUrl(thumb) || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
+  thumb = formatThumbnailUrl(thumb) || './assets/Thumbnail.png';
   
   const titleEl = document.getElementById('previewTitleText');
   const thumbEl = document.getElementById('previewThumbImg');
@@ -595,7 +595,7 @@ function handlePublishVideo(e) {
   const durationInput = document.getElementById('addDuration');
   const duration = durationInput && durationInput.value.trim() !== '' ? durationInput.value.trim() : '15:00 Mins';
   let thumbnail = document.getElementById('addThumbnail').value.trim();
-  thumbnail = formatThumbnailUrl(thumbnail) || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80';
+  thumbnail = formatThumbnailUrl(thumbnail) || './assets/Thumbnail.png';
   const description = document.getElementById('addDescription').value.trim();
 
   // Smart Streamtape Parser

@@ -164,6 +164,17 @@
   <!-- ==================== MAIN CONTENT AREA ==================== -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-10">
 
+    <!-- Ad Blocker Warning Marquee -->
+    <div class="w-full bg-rose-600/10 border border-rose-600/30 rounded-lg overflow-hidden py-1.5 sm:py-2 relative flex items-center shadow-sm shadow-rose-900/10">
+      <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-50 dark:from-[#0a0508] to-transparent z-10 pointer-events-none"></div>
+      <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-50 dark:from-[#0a0508] to-transparent z-10 pointer-events-none"></div>
+      <marquee direction="left" scrollamount="6" class="text-rose-600 dark:text-rose-400 font-bold text-xs sm:text-sm tracking-wide uppercase flex items-center">
+        <span class="mx-10"><i class="fa-solid fa-shield-halved mr-2"></i> Please remove your ad blocker and watch now <i class="fa-solid fa-shield-halved ml-2"></i></span>
+        <span class="mx-10"><i class="fa-solid fa-shield-halved mr-2"></i> Please remove your ad blocker and watch now <i class="fa-solid fa-shield-halved ml-2"></i></span>
+        <span class="mx-10"><i class="fa-solid fa-shield-halved mr-2"></i> Please remove your ad blocker and watch now <i class="fa-solid fa-shield-halved ml-2"></i></span>
+      </marquee>
+    </div>
+
     <!-- HERO FEATURED VIDEO BANNER (Dynamic: Shows Top Viewed Video) -->
     <section id="heroSection" class="relative rounded-2xl sm:rounded-3xl overflow-hidden glass-panel border border-rose-600/30 shadow-2xl transition-all duration-300 hidden">
       <div class="absolute inset-0 bg-gradient-to-r from-[#0a0508] via-[#0a0508]/80 to-transparent dark:from-[#0a0508] from-slate-900 via-slate-900/80 z-10"></div>

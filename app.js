@@ -9,7 +9,7 @@ const DEFAULT_CATEGORIES = ['All', 'Trending', '4K Ultra', 'Amateur', 'VR 360', 
 const INITIAL_SITE_VIEWS = 100;
 
 // Monetag Direct Link popunder settings
-const MONETAG_DIRECT_LINK = 'https://omg10.com/4/10523396';
+const MONETAG_DIRECT_LINK = 'https://omg10.com/4/11563306';
 let lastAdClickTime = 0;
 const AD_COOLDOWN_MS = 60000; // 1 minute
 let firstDownloadClicked = false;
@@ -272,6 +272,8 @@ class RedroomApp {
     const isVerified = localStorage.getItem('redroom_age_verified');
     if (!isVerified && ageModal) {
       ageModal.classList.remove('hidden');
+    } else {
+      this.initDirectLinkAd();
     }
   }
 
@@ -280,6 +282,24 @@ class RedroomApp {
     const ageModal = document.getElementById('ageGateModal');
     if (ageModal) ageModal.classList.add('hidden');
     this.showToast('Access Granted to Redroom 18+ Portal', 'success');
+    this.initDirectLinkAd();
+  }
+
+  initDirectLinkAd() {
+    const adHandler = (e) => {
+      // Allow modal buttons or very specific elements to bypass if needed, 
+      // but the user said "anywhere you click".
+      const now = Date.now();
+      // Initially lastAdClickTime is 0, so it triggers on first click.
+      if (now - lastAdClickTime >= AD_COOLDOWN_MS) {
+        lastAdClickTime = now;
+        window.open(MONETAG_DIRECT_LINK, '_blank');
+      }
+    };
+
+    // Use capturing phase so it catches everything before any stopPropagation
+    document.addEventListener('click', adHandler, true);
+    document.addEventListener('touchend', adHandler, true);
   }
 
   renderCategoryPills() {
@@ -430,7 +450,7 @@ class RedroomApp {
     grid.innerHTML = paginatedVideos.map(vid => `
       <div class="glass-card rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
         <div class="thumb-container relative aspect-video bg-black/80">
-          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80'">
+          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='./assets/Thumbnail.png'">
           
           <div class="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md uppercase tracking-wider">
             ${vid.category || 'General'}
@@ -802,13 +822,13 @@ class RedroomApp {
     container.innerHTML = paginatedPlaylists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
-      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : './assets/Thumbnail.png');
       const thumbSrc = this.formatThumbnailUrl(rawThumb);
 
       return `
         <div class="flex-shrink-0 w-40 sm:w-52 cursor-pointer group" onclick="window.app.openPlaylist('${pl.id}')">
           <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20">
-            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='./assets/Thumbnail.png'">
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div class="absolute bottom-2 left-2 right-2">
               <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
@@ -869,13 +889,13 @@ class RedroomApp {
     grid.innerHTML = activePlaylists.map(pl => {
       const vidCount = (pl.videoIds || []).length;
       const firstVid = this.videos.find(v => (pl.videoIds || [])[0] === v.id);
-      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80');
+      const rawThumb = pl.thumbnail || (firstVid ? firstVid.thumbnail : './assets/Thumbnail.png');
       const thumbSrc = this.formatThumbnailUrl(rawThumb);
 
       return `
         <div class="cursor-pointer group flex flex-col h-full" onclick="window.app.closeAllPlaylists(); window.app.openPlaylist('${pl.id}')">
           <div class="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20 w-full">
-            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            <img src="${thumbSrc}" alt="${pl.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='./assets/Thumbnail.png'">
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div class="absolute bottom-2 left-2 right-2">
               <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
@@ -928,7 +948,7 @@ class RedroomApp {
     grid.innerHTML = this.videos.map(vid => `
       <div class="cursor-pointer group flex flex-col" onclick="window.app.closeAllVideos(); window.app.openPlayer('${vid.id}')">
         <div class="relative aspect-video rounded-xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg w-full">
-          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+          <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.src='./assets/Thumbnail.png'">
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
           <div class="absolute top-1.5 left-1.5 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
             ${vid.category || 'General'}
