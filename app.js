@@ -200,6 +200,11 @@ class RedroomApp {
         icon.className = 'fa-solid fa-moon text-rose-500 theme-toggle-icon';
       }
     }
+    // Sync mobile bottom nav theme icon
+    const mobileIcon = document.getElementById('mobileThemeIcon');
+    if (mobileIcon) {
+      mobileIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
   }
 
   /**
@@ -376,43 +381,43 @@ class RedroomApp {
     }
 
     grid.innerHTML = filtered.map(vid => `
-      <div class="glass-card rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
+      <div class="glass-card rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${vid.id}')">
         <div class="thumb-container relative aspect-video bg-black/80">
           <img src="${vid.thumbnail}" alt="${vid.title}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80'">
           
-          <div class="absolute top-3 left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+          <div class="absolute top-1.5 sm:top-3 left-1.5 sm:left-3 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md uppercase tracking-wider">
             ${vid.quality || 'HD'}
           </div>
 
-          <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-gray-200 text-xs font-semibold px-2 py-1 rounded-md border border-white/10">
+          <div class="absolute bottom-1.5 sm:bottom-3 right-1.5 sm:right-3 bg-black/80 backdrop-blur-md text-gray-200 text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded sm:rounded-md border border-white/10">
             ${vid.duration || '15:00'}
           </div>
 
-          <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1">
-            <i class="fa-solid fa-star text-[10px]"></i> ${vid.rating || 98}%
+          <div class="absolute bottom-1.5 sm:bottom-3 left-1.5 sm:left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md border border-white/10 flex items-center gap-1">
+            <i class="fa-solid fa-star text-[8px] sm:text-[10px]"></i> ${vid.rating || 98}%
           </div>
 
           <div class="play-overlay absolute inset-0 bg-gradient-to-t from-red-950/90 via-black/40 to-transparent flex items-center justify-center">
-            <div class="w-14 h-14 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/50 transform group-hover:scale-110 transition-transform duration-300">
-              <i class="fa-solid fa-play text-xl ml-1"></i>
+            <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/50 transform group-hover:scale-110 transition-transform duration-300">
+              <i class="fa-solid fa-play text-base sm:text-xl ml-0.5"></i>
             </div>
           </div>
         </div>
 
-        <div class="p-4 flex-1 flex flex-col justify-between">
+        <div class="p-2.5 sm:p-4 flex-1 flex flex-col justify-between">
           <div>
-            <h3 class="font-bold dark:text-gray-100 text-slate-800 text-base group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug mb-2">
+            <h3 class="font-bold dark:text-gray-100 text-slate-800 text-xs sm:text-base group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug mb-1 sm:mb-2">
               ${vid.title}
             </h3>
-            <div class="flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500 mb-3">
+            <div class="hidden sm:flex items-center gap-2 text-xs dark:text-gray-400 text-slate-500 mb-3">
               <img src="${vid.uploaderAvatar}" alt="${vid.uploader}" class="w-5 h-5 rounded-full object-cover border border-rose-500/30">
               <span class="truncate">${vid.uploader}</span>
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-xs dark:text-gray-400 text-slate-500 pt-2 border-t border-white/5">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-rose-500/70"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()} views</span>
-            <span>${vid.uploadDate}</span>
+          <div class="flex items-center justify-between text-[9px] sm:text-xs dark:text-gray-400 text-slate-500 pt-1.5 sm:pt-2 border-t border-white/5">
+            <span class="flex items-center gap-1"><i class="fa-solid fa-eye text-rose-500/70 text-[8px] sm:text-xs"></i> ${(vid.viewCount || vid.views || 0).toLocaleString()}</span>
+            <span class="hidden sm:inline">${vid.uploadDate}</span>
           </div>
         </div>
       </div>
@@ -564,15 +569,15 @@ class RedroomApp {
 
     const recommended = this.videos.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
     recList.innerHTML = recommended.map(v => `
-      <div class="flex gap-3 cursor-pointer group" onclick="window.app.openPlayer('${v.id}')">
-        <div class="w-28 aspect-video rounded-lg overflow-hidden relative bg-black shrink-0">
+      <div class="flex gap-2 sm:gap-3 cursor-pointer group" onclick="window.app.openPlayer('${v.id}')">
+        <div class="w-24 sm:w-28 aspect-video rounded-lg overflow-hidden relative bg-black shrink-0">
           <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
-          <span class="absolute bottom-1 right-1 text-[9px] bg-black/80 px-1 rounded text-gray-200 font-semibold">${v.duration || '15:00'}</span>
+          <span class="absolute bottom-1 right-1 text-[8px] sm:text-[9px] bg-black/80 px-1 rounded text-gray-200 font-semibold">${v.duration || '15:00'}</span>
         </div>
         <div class="flex-1 min-w-0">
-          <h4 class="text-xs font-semibold dark:text-gray-200 text-slate-800 group-hover:text-rose-400 line-clamp-2 leading-tight mb-1">${v.title}</h4>
-          <span class="text-[11px] text-gray-400 block truncate">${v.uploader}</span>
-          <span class="text-[10px] text-gray-500">${v.views} views</span>
+          <h4 class="text-[10px] sm:text-xs font-semibold dark:text-gray-200 text-slate-800 group-hover:text-rose-400 line-clamp-2 leading-tight mb-1">${v.title}</h4>
+          <span class="text-[10px] sm:text-[11px] text-gray-400 block truncate">${v.uploader}</span>
+          <span class="text-[9px] sm:text-[10px] text-gray-500">${v.views} views</span>
         </div>
       </div>
     `).join('');
