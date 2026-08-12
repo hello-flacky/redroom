@@ -19,13 +19,14 @@ const INITIAL_VIDEOS = [];
 
 class RedroomApp {
   constructor() {
-    this.videos = this.loadVideos();
-    this.categories = this.loadCategories();
+    this.videos = [];
+    this.categories = [...DEFAULT_CATEGORIES];
     this.siteViews = this.loadSiteViews();
     this.currentCategory = 'All';
     this.searchQuery = '';
     this.currentVideo = null;
     this.init();
+    this.fetchDataFromFirebase();
   }
 
   showLoader(message = 'Loading Redroom VOD...') {
@@ -40,6 +41,41 @@ class RedroomApp {
     if (loader) {
       loader.classList.add('hidden');
     }
+  }
+
+  fetchDataFromFirebase() {
+    this.showLoader('Syncing Global Database...');
+    // Fetch Categories
+    db.collection('settings').doc('categories').onSnapshot(doc => {
+      if (doc.exists && doc.data().list) {
+        this.categories = doc.data().list;
+        this.renderCategoryPills();
+      }
+    });
+
+    // Fetch Videos Real-time
+    db.collection('videos').onSnapshot(snapshot => {
+      const vids = [];
+      snapshot.forEach(doc => {
+        vids.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort by uploadDate descending (newest first)
+      this.videos = vids.sort((a, b) => b.createdAt - a.createdAt);
+      this.renderHeroSection();
+      this.renderVideoGrid();
+      this.hideLoader();
+    }, (error) => {
+      console.error('Error fetching videos:', error);
+      this.hideLoader();
+    });
+
+    // Sync Global Site Views
+    db.collection('settings').doc('stats').onSnapshot(doc => {
+      if (doc.exists && doc.data().totalViews) {
+        this.siteViews = doc.data().totalViews;
+        this.updateSiteViewsDisplay();
+      }
+    });
   }
 
   loadVideos() {
@@ -68,17 +104,21 @@ class RedroomApp {
   }
 
   loadSiteViews() {
-    const saved = localStorage.getItem('redroom_site_views');
-    if (saved) {
-      return parseInt(saved, 10);
-    }
-    return INITIAL_SITE_VIEWS;
+    return INITIAL_SITE_VIEWS; // Managed by Firebase now
   }
 
   incrementSiteViews() {
     this.siteViews++;
-    localStorage.setItem('redroom_site_views', this.siteViews.toString());
     this.updateSiteViewsDisplay();
+    // Fire-and-forget sync to Firebase
+    try {
+      if (typeof db !== 'undefined') {
+        db.collection('settings').doc('stats').set(
+          { totalViews: firebase.firestore.FieldValue.increment(1) }, 
+          { merge: true }
+        );
+      }
+    } catch(e) {}
   }
 
   updateSiteViewsDisplay() {

@@ -9,43 +9,45 @@ const DEFAULT_VIDEOS = [];
 
 class RedroomAdmin {
   constructor() {
-    this.videos = this.getVideos();
-    this.categories = this.getCategories();
+    this.videos = [];
+    this.categories = [...DEFAULT_CATEGORIES];
     this.currentTab = 'stats';
     this.init();
+    this.fetchDataFromFirebase();
   }
 
-  getVideos() {
-    const saved = localStorage.getItem('redroom_custom_videos');
-    if (saved) {
-      try {
-        const customArr = JSON.parse(saved);
-        return [...customArr];
-      } catch (e) {
-        console.error('Error loading videos:', e);
+  fetchDataFromFirebase() {
+    // Fetch Categories
+    db.collection('settings').doc('categories').onSnapshot(doc => {
+      if (doc.exists && doc.data().list) {
+        this.categories = doc.data().list;
+        this.renderCategories();
+        this.populateCategoryDropdowns();
+      } else {
+        db.collection('settings').doc('categories').set({ list: [...DEFAULT_CATEGORIES] });
       }
-    }
-    return [...DEFAULT_VIDEOS];
+    });
+
+    // Fetch Videos
+    db.collection('videos').onSnapshot(snapshot => {
+      const vids = [];
+      snapshot.forEach(doc => {
+        vids.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort by newest
+      this.videos = vids.sort((a, b) => b.createdAt - a.createdAt);
+      this.updateAdvancedStats();
+      this.renderTable();
+    }, (error) => {
+      console.error('Error fetching videos from Admin:', error);
+    });
   }
 
-  saveVideos() {
-    localStorage.setItem('redroom_custom_videos', JSON.stringify(this.videos));
-  }
-
-  getCategories() {
-    const saved = localStorage.getItem('redroom_categories');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error loading categories:', e);
-      }
-    }
-    return [...DEFAULT_CATEGORIES];
-  }
-
+  getVideos() { return this.videos; }
+  saveVideos() { } // Handled by Firebase realtime
+  getCategories() { return this.categories; }
   saveCategories() {
-    localStorage.setItem('redroom_categories', JSON.stringify(this.categories));
+    db.collection('settings').doc('categories').set({ list: this.categories });
   }
 
   init() {
@@ -294,11 +296,16 @@ class RedroomAdmin {
   }
 
   addVideo(videoData) {
-    this.videos.unshift(videoData);
-    this.saveVideos();
-    this.updateAdvancedStats();
-    alert('Video published successfully!');
-    this.switchTab('view');
+    videoData.createdAt = Date.now();
+    const docId = videoData.id;
+    db.collection('videos').doc(docId).set(videoData)
+      .then(() => {
+        alert('Video published successfully to Global Database!');
+        this.switchTab('view');
+      })
+      .catch(error => {
+        alert('Error publishing video: ' + error.message);
+      });
   }
 
   openEditModal(videoId) {
@@ -317,22 +324,23 @@ class RedroomAdmin {
   }
 
   saveEdit(updatedData) {
-    const index = this.videos.findIndex(v => v.id === updatedData.id);
-    if (index !== -1) {
-      this.videos[index] = { ...this.videos[index], ...updatedData };
-      this.saveVideos();
-      this.renderTable();
-      closeEditModal();
-      alert('Video updated successfully!');
-    }
+    db.collection('videos').doc(updatedData.id).update(updatedData)
+      .then(() => {
+        closeEditModal();
+        alert('Video updated successfully in Global Database!');
+      })
+      .catch(error => {
+        alert('Error updating video: ' + error.message);
+      });
   }
 
   deleteVideo(videoId) {
-    if (confirm('Are you sure you want to delete this video from Redroom?')) {
-      this.videos = this.videos.filter(v => v.id !== videoId);
-      this.saveVideos();
-      this.updateAdvancedStats();
-      this.renderTable();
+    if (confirm('Are you sure you want to delete this video from the Global Database?')) {
+      db.collection('videos').doc(videoId).delete().then(() => {
+        alert('Video deleted.');
+      }).catch(err => {
+        alert('Error deleting video: ' + err.message);
+      });
     }
   }
 }

@@ -370,7 +370,7 @@
 
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail Image URL</label>
-                <input type="url" id="addThumbnail" oninput="updateAddPreview()"
+                <input type="text" id="addThumbnail" oninput="updateAddPreview()"
                   placeholder="https://images.unsplash.com/..." class="admin-input">
               </div>
 
@@ -589,7 +589,7 @@
 
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail URL</label>
-          <input type="url" id="editThumbnail" class="admin-input">
+          <input type="text" id="editThumbnail" class="admin-input">
         </div>
 
         <div class="flex gap-3 pt-2">
@@ -604,6 +604,13 @@
       </form>
     </div>
   </div>
+
+  <!-- Firebase SDK (v8 compat for simpler non-module setup) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config & DB Init -->
+  <script src="firebase-config.js"></script>
 
   <script src="admin.js"></script>
 </body>
