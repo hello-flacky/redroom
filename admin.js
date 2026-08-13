@@ -453,6 +453,8 @@ class RedroomAdmin {
     if (editMovieYear) editMovieYear.value = movie.year || '';
     const editMovieLanguage = document.getElementById('editMovieLanguage');
     if (editMovieLanguage) editMovieLanguage.value = movie.language || '';
+    const editMovieImdbRating = document.getElementById('editMovieImdbRating');
+    if (editMovieImdbRating) editMovieImdbRating.value = movie.imdbRating || '';
     document.getElementById('editMovieThumbnail').value = movie.thumbnail || '';
 
     const modal = document.getElementById('editMovieModal');
@@ -791,6 +793,8 @@ function handlePublishMovie(e) {
   const language = languageInput ? languageInput.value.trim() : '';
   const yearInput = document.getElementById('addMovieYear');
   const year = yearInput ? yearInput.value.trim() : '';
+  const imdbRatingInput = document.getElementById('addMovieImdbRating');
+  const imdbRating = imdbRatingInput ? imdbRatingInput.value.trim() : '';
 
   // Smart Streamtape Parser
   const parsedStreamtapeUrl = adminApp.parseStreamtapeUrl(rawStreamtapeUrl);
@@ -807,6 +811,7 @@ function handlePublishMovie(e) {
     category: 'Movie',
     language: language,
     year: year,
+    imdbRating: imdbRating,
     quality: 'HD',
     thumbnail: thumbnail,
     streamtapeUrl: parsedStreamtapeUrl,
@@ -822,6 +827,7 @@ function handlePublishMovie(e) {
   if (durationInput) durationInput.value = '';
   if (languageInput) languageInput.value = '';
   if (yearInput) yearInput.value = '';
+  if (imdbRatingInput) imdbRatingInput.value = '';
   document.getElementById('addMovieThumbnail').value = '';
   document.getElementById('addMovieDescription').value = '';
 }
@@ -877,6 +883,7 @@ function handleSaveMovieEdit(e) {
     category: 'Movie',
     language: editLanguage ? editLanguage.value.trim() : '',
     year: editYear ? editYear.value.trim() : '',
+    imdbRating: document.getElementById('editMovieImdbRating') ? document.getElementById('editMovieImdbRating').value.trim() : '',
     streamtapeUrl: adminApp.parseStreamtapeUrl(rawUrl),
     thumbnail: formatThumbnailUrl(document.getElementById('editMovieThumbnail').value.trim())
   };

@@ -583,20 +583,37 @@ class RedroomApp {
     
     if (iframeContainer) {
       iframeContainer.innerHTML = `
-        <iframe 
-          src="${embedUrl}" 
-          width="100%" 
-          height="100%" 
-          allowfullscreen="true" 
-          webkitallowfullscreen="true" 
-          mozallowfullscreen="true"
-          scrolling="no" 
-          frameborder="0"
-          allow="autoplay; encrypted-media; fullscreen"
-          title="${video.title}"
-          style="position:absolute; top:0; left:0; width:100%; height:100%;">
-        </iframe>
+        <div id="playerThumbnailOverlay" class="w-full h-full relative cursor-pointer group">
+          <img src="${video.thumbnail || './assets/Thumbnail.png'}" class="w-full h-full object-cover" alt="Thumbnail">
+          <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-rose-600/90 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(225,29,72,0.5)] transform group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-play text-white text-2xl sm:text-3xl ml-2"></i>
+            </div>
+          </div>
+        </div>
       `;
+
+      // Attach click event to inject iframe
+      const overlay = document.getElementById('playerThumbnailOverlay');
+      if (overlay) {
+        overlay.onclick = () => {
+          iframeContainer.innerHTML = `
+            <iframe 
+              src="${embedUrl}" 
+              width="100%" 
+              height="100%" 
+              allowfullscreen="true" 
+              webkitallowfullscreen="true" 
+              mozallowfullscreen="true"
+              scrolling="no" 
+              frameborder="0"
+              allow="autoplay; encrypted-media; fullscreen"
+              title="${video.title}"
+              style="position:absolute; top:0; left:0; width:100%; height:100%;">
+            </iframe>
+          `;
+        };
+      }
     }
 
     document.getElementById('playerTitle').textContent = video.title;
@@ -1095,7 +1112,7 @@ class RedroomApp {
     section.classList.remove('hidden');
     if (countEl) countEl.textContent = `${this.movies.length} movie${this.movies.length !== 1 ? 's' : ''}`;
 
-    const limit = 12; // Load up to 12 movies on home page
+    const limit = 10; // Load up to 10 movies on home page
     const displayMovies = this.movies.slice(0, limit);
 
     container.innerHTML = displayMovies.map(mv => `
@@ -1106,10 +1123,7 @@ class RedroomApp {
           
           <div class="absolute bottom-2 left-2 right-2 flex justify-between items-end">
             <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit border border-rose-400">
-              <i class="fa-solid fa-star text-yellow-400 text-[8px] sm:text-[10px]"></i> ${mv.rating || '90%'}
-            </span>
-            <span class="text-white text-[9px] sm:text-[10px] font-semibold bg-black/80 px-1.5 py-0.5 rounded border border-white/20">
-              ${mv.duration || '1:30:00'}
+              <i class="fa-solid fa-star text-yellow-400 text-[8px] sm:text-[10px]"></i> ${mv.imdbRating || 'N/A'}
             </span>
           </div>
           
@@ -1119,8 +1133,15 @@ class RedroomApp {
             </div>
           </div>
         </div>
-        <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${mv.title}</h3>
-        <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${mv.category || 'Movie'} • ${(mv.viewCount || mv.views || 0).toLocaleString()} views</p>
+        <div class="mt-2 flex items-center gap-2">
+           <h3 class="text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-1 leading-snug">${mv.title} <span class="text-[10px] sm:text-xs text-gray-400 font-normal">(${mv.year || 'Unknown'})</span></h3>
+        </div>
+        <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${mv.language || 'Unknown'}</p>
+        <div class="mt-1">
+          <span class="inline-block text-white text-[9px] sm:text-[10px] font-semibold bg-black/80 px-1.5 py-0.5 rounded border border-white/20">
+            ${mv.duration || '1:30:00'}
+          </span>
+        </div>
       </div>
     `).join('');
   }
@@ -1149,22 +1170,26 @@ class RedroomApp {
           ` : ''}
           
           <div class="absolute bottom-1.5 left-1.5 right-1.5 flex justify-between items-end">
-            <span class="text-white text-[9px] font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1 border border-rose-400">
-              <i class="fa-solid fa-star text-yellow-400 text-[8px]"></i> ${mv.rating || '90%'}
-            </span>
-            <span class="text-white text-[9px] font-semibold bg-black/80 px-1.5 py-0.5 rounded border border-white/20">
-              ${mv.duration || '1:30:00'}
+            <span class="text-white text-[9px] font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1 w-fit border border-rose-400">
+              <i class="fa-solid fa-star text-yellow-400 text-[8px]"></i> ${mv.imdbRating || 'N/A'}
             </span>
           </div>
-
+          
           <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
             <div class="w-10 h-10 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
               <i class="fa-solid fa-play text-sm ml-0.5"></i>
             </div>
           </div>
         </div>
-        <h3 class="mt-1.5 text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${mv.title}</h3>
-        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(mv.viewCount || mv.views || 0).toLocaleString()} views • ${this.formatTimeAgo(mv.createdAt, mv.uploadDate)}</span>
+        <div class="mt-1.5 flex items-center gap-1.5">
+          <h3 class="text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-1 leading-snug">${mv.title} <span class="text-[9px] sm:text-[10px] text-gray-400 font-normal">(${mv.year || 'Unknown'})</span></h3>
+        </div>
+        <p class="text-[9px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${mv.language || 'Unknown'}</p>
+        <div class="mt-1">
+          <span class="inline-block text-white text-[8px] font-semibold bg-black/80 px-1 py-0.5 rounded border border-white/20">
+            ${mv.duration || '1:30:00'}
+          </span>
+        </div>
       </div>
     `).join('');
 
