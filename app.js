@@ -33,8 +33,33 @@ class RedroomApp {
     this.itemsPerPage = 12; // Load 12 videos on home page
     this.currentPlaylistPage = 1;
     this.playlistsPerPage = 5;
+
+    this.initialVideosLoaded = false;
+    this.initialPlaylistsLoaded = false;
+    this.deepLinkChecked = false;
+
     this.init();
     this.fetchDataFromFirebase();
+  }
+
+  checkDeepLinks() {
+    if (this.deepLinkChecked || !this.initialVideosLoaded || !this.initialPlaylistsLoaded) return;
+    this.deepLinkChecked = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const videoId = params.get('video');
+    if (videoId) {
+      setTimeout(() => this.openPlayer(videoId, true), 500);
+      return;
+    }
+
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#playlist-')) {
+      const playlistId = hash.replace('#playlist-', '');
+      if (this.playlists.find(p => p.id === playlistId)) {
+         setTimeout(() => this.openPlaylist(playlistId, true), 500);
+      }
+    }
   }
 
   showLoader(message = 'Loading Redroom VOD...') {
@@ -73,6 +98,8 @@ class RedroomApp {
       this.renderVideoGrid();
       this.renderPlaylists(); // Re-render playlists when videos change (for thumbnails)
       this.hideLoader();
+      this.initialVideosLoaded = true;
+      this.checkDeepLinks();
     }, (error) => {
       console.error('Error fetching videos:', error);
       this.hideLoader();
@@ -86,6 +113,8 @@ class RedroomApp {
       });
       this.playlists = pls.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       this.renderPlaylists();
+      this.initialPlaylistsLoaded = true;
+      this.checkDeepLinks();
     });
 
     // Fetch Movies Real-time
