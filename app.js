@@ -583,7 +583,7 @@ class RedroomApp {
     
     if (iframeContainer) {
       iframeContainer.innerHTML = `
-        <div id="playerThumbnailOverlay" class="w-full h-full relative cursor-pointer group">
+        <div id="playerThumbnailOverlay" class="absolute inset-0 w-full h-full cursor-pointer group">
           <img src="${video.thumbnail || './assets/Thumbnail.png'}" class="w-full h-full object-cover" alt="Thumbnail">
           <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
             <div class="w-16 h-16 sm:w-20 sm:h-20 bg-rose-600/90 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(225,29,72,0.5)] transform group-hover:scale-110 transition-transform">
@@ -1122,9 +1122,11 @@ class RedroomApp {
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
           
           <div class="absolute bottom-2 left-2 right-2 flex justify-between items-end">
+            ${mv.imdbRating ? `
             <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit border border-rose-400">
-              <i class="fa-solid fa-star text-yellow-400 text-[8px] sm:text-[10px]"></i> ${mv.imdbRating || 'N/A'}
+              <i class="fa-solid fa-star text-yellow-400 text-[8px] sm:text-[10px]"></i> IMDb ${mv.imdbRating}
             </span>
+            ` : '<div></div>'}
           </div>
           
           <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1170,9 +1172,11 @@ class RedroomApp {
           ` : ''}
           
           <div class="absolute bottom-1.5 left-1.5 right-1.5 flex justify-between items-end">
+            ${mv.imdbRating ? `
             <span class="text-white text-[9px] font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1 w-fit border border-rose-400">
-              <i class="fa-solid fa-star text-yellow-400 text-[8px]"></i> ${mv.imdbRating || 'N/A'}
+              <i class="fa-solid fa-star text-yellow-400 text-[8px]"></i> IMDb ${mv.imdbRating}
             </span>
+            ` : '<div></div>'}
           </div>
           
           <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
