@@ -1282,6 +1282,16 @@ class RedroomApp {
     this.playlistVideoIndex = 0;
     this.openPlayer(videoIds[0]);
   }
+
+  copyPlaylistShareLink() {
+    if (!this.activePlaylist) return;
+    const url = window.location.origin + window.location.pathname + '#playlist-' + this.activePlaylist.id;
+    navigator.clipboard.writeText(url).then(() => {
+      this.showToast('Playlist Link copied to clipboard!', 'success');
+    }).catch(err => {
+      this.showToast('Failed to copy link', 'error');
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
