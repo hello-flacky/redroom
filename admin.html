@@ -246,6 +246,12 @@
           <span>Add Video</span>
         </button>
 
+        <button id="tabBtn-addMovie" onclick="switchTab('addMovie')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-film w-5"></i>
+          <span>Add Movie</span>
+        </button>
+
         <button id="tabBtn-categories" onclick="switchTab('categories')"
           class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
           <i class="fa-solid fa-tags w-5"></i>
@@ -256,6 +262,12 @@
           class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
           <i class="fa-solid fa-list-check w-5"></i>
           <span>View All Videos</span>
+        </button>
+
+        <button id="tabBtn-viewMovies" onclick="switchTab('viewMovies')"
+          class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm">
+          <i class="fa-solid fa-video w-5"></i>
+          <span>View All Movies</span>
         </button>
 
         <button id="tabBtn-playlists" onclick="switchTab('playlists')"
@@ -302,14 +314,14 @@
             <span class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-arrow-up mr-1"></i>Active</span>
           </div>
           <div class="admin-stat-card p-3 sm:p-5">
+            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Total Movies</span>
+            <div id="statTotalMovies" class="text-xl sm:text-3xl font-bold text-amber-400 mt-1 sm:mt-2">0</div>
+            <span class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-arrow-up mr-1"></i>Active</span>
+          </div>
+          <div class="admin-stat-card p-3 sm:p-5">
             <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Total Views</span>
             <div id="statTotalViews" class="text-xl sm:text-3xl font-bold text-rose-500 mt-1 sm:mt-2">0</div>
             <span class="text-[10px] sm:text-[11px] text-slate-400 mt-1 block">Accumulated</span>
-          </div>
-          <div class="admin-stat-card p-3 sm:p-5">
-            <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Embed Health</span>
-            <div id="statEmbeds" class="text-xl sm:text-3xl font-bold text-emerald-400 mt-1 sm:mt-2">100%</div>
-            <span class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 block"><i class="fa-solid fa-circle-check mr-1"></i>Active</span>
           </div>
           <div class="admin-stat-card p-3 sm:p-5">
             <span class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Categories</span>
@@ -474,6 +486,91 @@
         </div>
       </section>
 
+      <!-- TAB 2.5: ADD MOVIE TAB -->
+      <section id="tabContent-addMovie" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          <!-- Left Column: Input Form -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h2 class="text-base font-bold text-white pb-3 border-b border-slate-800">Publish Streamtape Movie</h2>
+
+            <form onsubmit="handlePublishMovie(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Streamtape Movie Link *</label>
+                <input type="url" id="addMovieStreamtapeUrl" oninput="updateAddMoviePreview()"
+                  placeholder="https://streamtape.com/v/..." required class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Movie Title *</label>
+                <input type="text" id="addMovieTitle" oninput="updateAddMoviePreview()" placeholder="Enter full movie title"
+                  required class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Select Category</label>
+                <select id="addMovieCategorySelect" class="admin-input">
+                  <!-- Dynamically populated by admin.js -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Movie Duration</label>
+                <input type="text" id="addMovieDuration" placeholder="e.g. 120:00 Mins" class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail Image URL</label>
+                <input type="text" id="addMovieThumbnail" oninput="updateAddMoviePreview()"
+                  placeholder="./assets/Thumbnail.png (or any URL)" class="admin-input">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Description (Optional)</label>
+                <textarea id="addMovieDescription" rows="3" placeholder="Add movie details..."
+                  class="admin-input"></textarea>
+              </div>
+
+              <button type="submit" class="btn-admin-primary w-full text-sm mt-2">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Save & Publish Movie
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Live Video Card & Embed Preview -->
+          <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 space-y-4">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center justify-between pb-3 border-b border-slate-800">
+              <span>Live Card & Embed Preview</span>
+              <span class="text-xs text-emerald-400 font-medium"><i class="fa-solid fa-eye mr-1"></i> Real-time</span>
+            </h3>
+
+            <!-- Card Preview Box -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-lg p-4 space-y-4">
+              <div id="previewMovieEmbedFrame" class="preview-aspect">
+                <img id="previewMovieThumbImg" src="./assets/Thumbnail.png">
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div class="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-play ml-0.5"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 id="previewMovieTitleText" class="font-bold text-white text-base line-clamp-2">Movie Title Preview</h4>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mt-2">
+                  <span>Redroom Admin</span>
+                  <span>•</span>
+                  <span>1 View</span>
+                  <span>•</span>
+                  <span>Just now</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- TAB 3: CATEGORY MANAGER TAB -->
       <section id="tabContent-categories" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -533,6 +630,36 @@
                 </tr>
               </thead>
               <tbody id="adminTableBody">
+                <!-- Injected by admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4.5: VIEW ALL MOVIES TAB -->
+      <section id="tabContent-viewMovies" class="p-4 sm:p-8 hidden space-y-4 sm:space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+          <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-white">All Published Movies</h2>
+              <span class="text-[11px] text-slate-400 block">Manage your movies here</span>
+            </div>
+            <span id="movieCountBadge" class="text-xs text-slate-400">0 Movies</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Thumbnail & Title</th>
+                  <th>Category</th>
+                  <th>Views</th>
+                  <th>Streamtape Link</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminMoviesTableBody">
                 <!-- Injected by admin.js -->
               </tbody>
             </table>
@@ -676,6 +803,54 @@
         class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
         Close Analytics
       </button>
+    </div>
+  </div>
+
+  <!-- EDIT MOVIE MODAL -->
+  <div id="editMovieModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden">
+    <div class="bg-slate-900 w-full max-w-lg p-6 rounded-lg border border-slate-800 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Edit Movie Details</h3>
+        <button onclick="closeEditMovieModal()" class="text-slate-400 hover:text-white"><i
+            class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form onsubmit="handleSaveMovieEdit(event)" class="space-y-4">
+        <input type="hidden" id="editMovieId">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Title</label>
+          <input type="text" id="editMovieTitle" required class="admin-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Category</label>
+          <select id="editMovieCategorySelect" class="admin-input">
+            <!-- Dynamically populated by admin.js -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Streamtape URL</label>
+          <input type="url" id="editMovieStreamtapeUrl" required class="admin-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Thumbnail URL</label>
+          <input type="text" id="editMovieThumbnail" class="admin-input">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeEditMovieModal()"
+            class="w-full bg-slate-800 text-slate-300 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+            Cancel
+          </button>
+          <button type="submit" class="btn-admin-primary w-full text-xs">
+            Save Changes
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

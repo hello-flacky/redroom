@@ -10,6 +10,7 @@ const DEFAULT_VIDEOS = [];
 class RedroomAdmin {
   constructor() {
     this.videos = [];
+    this.movies = [];
     this.playlists = [];
     this.categories = [...DEFAULT_CATEGORIES];
     this.currentTab = 'stats';
@@ -43,6 +44,19 @@ class RedroomAdmin {
       this.renderPlaylistVideoChecklist();
     }, (error) => {
       console.error('Error fetching videos from Admin:', error);
+    });
+
+    // Fetch Movies
+    db.collection('movies').onSnapshot(snapshot => {
+      const mvs = [];
+      snapshot.forEach(doc => {
+        mvs.push({ id: doc.id, ...doc.data() });
+      });
+      this.movies = mvs.sort((a, b) => b.createdAt - a.createdAt);
+      this.updateAdvancedStats();
+      this.renderMoviesTable();
+    }, (error) => {
+      console.error('Error fetching movies from Admin:', error);
     });
 
     // Fetch Playlists Real-time
@@ -100,12 +114,14 @@ class RedroomAdmin {
 
   switchTab(tabName) {
     this.currentTab = tabName;
-    const tabs = ['stats', 'add', 'categories', 'view', 'playlists'];
+    const tabs = ['stats', 'add', 'addMovie', 'categories', 'view', 'viewMovies', 'playlists'];
     const titleMap = {
       stats: 'System Statistics',
       add: 'Add New Streamtape Video',
+      addMovie: 'Add New Movie',
       categories: 'Category Manager',
       view: 'Manage & Edit Videos',
+      viewMovies: 'Manage & Edit Movies',
       playlists: 'Playlist Manager'
     };
 
@@ -128,7 +144,8 @@ class RedroomAdmin {
     if (tabName === 'stats') this.updateAdvancedStats();
     if (tabName === 'categories') this.renderCategories();
     if (tabName === 'view') this.renderTable();
-    if (tabName === 'add') this.populateCategoryDropdowns();
+    if (tabName === 'viewMovies') this.renderMoviesTable();
+    if (tabName === 'add' || tabName === 'addMovie') this.populateCategoryDropdowns();
     if (tabName === 'playlists') {
       this.renderPlaylistVideoChecklist();
       this.renderAdminPlaylists();
@@ -171,15 +188,20 @@ class RedroomAdmin {
 
   updateAdvancedStats() {
     const totalVids = document.getElementById('statTotalVideos');
+    const totalMovies = document.getElementById('statTotalMovies');
     const totalViews = document.getElementById('statTotalViews');
     const totalCategories = document.getElementById('statCategories');
     const countBadge = document.getElementById('videoCountBadge');
+    const movieCountBadge = document.getElementById('movieCountBadge');
 
     if (totalVids) totalVids.textContent = this.videos.length;
+    if (totalMovies) totalMovies.textContent = this.movies.length;
     if (totalCategories) totalCategories.textContent = this.categories.length;
     if (countBadge) countBadge.textContent = `${this.videos.length} Videos Total`;
+    if (movieCountBadge) movieCountBadge.textContent = `${this.movies.length} Movies Total`;
 
-    let viewsSum = this.videos.reduce((acc, v) => acc + (v.viewCount || 0), 0);
+    let viewsSum = this.videos.reduce((acc, v) => acc + (v.viewCount || 0), 0) + 
+                   this.movies.reduce((acc, m) => acc + (m.viewCount || 0), 0);
     if (totalViews) totalViews.textContent = viewsSum.toLocaleString();
 
     const catBars = document.getElementById('categoryBreakdownBars');
@@ -360,6 +382,103 @@ class RedroomAdmin {
         alert('Video deleted.');
       }).catch(err => {
         alert('Error deleting video: ' + err.message);
+      });
+    }
+  }
+
+  // ==============================
+  // MOVIE MANAGEMENT METHODS
+  // ==============================
+  renderMoviesTable() {
+    const tbody = document.getElementById('adminMoviesTableBody');
+    if (!tbody) return;
+
+    if (this.movies.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-500">No movies published yet. Use "Add Movie" tab to upload your first Streamtape movie!</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = this.movies.map(m => `
+      <tr class="cursor-pointer hover:bg-slate-800/60" onclick="adminApp.openVideoStatsModal('${m.id}')">
+        <td>
+          <div class="flex items-center gap-3">
+            <img src="${m.thumbnail}" class="w-12 h-8 object-cover rounded bg-slate-800 shrink-0">
+            <div class="min-w-0">
+              <strong class="text-white block truncate max-w-xs font-semibold hover:text-rose-400">${m.title}</strong>
+              <span class="text-xs text-slate-400">${m.uploader || 'Admin'}</span>
+            </div>
+          </div>
+        </td>
+        <td><span class="px-2 py-0.5 bg-slate-800 text-rose-400 rounded text-xs font-medium">${m.category || 'General'}</span></td>
+        <td><span class="text-xs text-slate-400">${m.views}</span></td>
+        <td class="font-mono text-xs text-slate-400 truncate max-w-[180px]">${m.streamtapeUrl}</td>
+        <td class="text-right" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-end gap-2">
+            <button onclick="adminApp.openEditMovieModal('${m.id}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-semibold">
+              <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+            </button>
+            <button onclick="adminApp.deleteMovie('${m.id}')" class="px-3 py-1.5 bg-rose-950 border border-rose-800 hover:bg-rose-600 text-rose-200 hover:text-white rounded text-xs font-semibold">
+              <i class="fa-solid fa-trash mr-1"></i> Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  addMovie(movieData) {
+    movieData.createdAt = Date.now();
+    const docId = movieData.id;
+    db.collection('movies').doc(docId).set(movieData)
+      .then(() => {
+        alert('Movie published successfully to Global Database!');
+        this.switchTab('viewMovies');
+      })
+      .catch(error => {
+        alert('Error publishing movie: ' + error.message);
+      });
+  }
+
+  openEditMovieModal(movieId) {
+    const movie = this.movies.find(m => m.id === movieId);
+    if (!movie) return;
+
+    this.populateCategoryDropdowns();
+    document.getElementById('editMovieId').value = movie.id;
+    document.getElementById('editMovieTitle').value = movie.title;
+    document.getElementById('editMovieStreamtapeUrl').value = movie.streamtapeUrl;
+    
+    // Check if editMovieCategorySelect exists, in case the modal wasn't updated yet.
+    const editMovieCategorySelect = document.getElementById('editMovieCategorySelect');
+    if (editMovieCategorySelect) {
+        // Need to populate it with categories first since we might have just switched to this view
+        const filteredCats = this.categories.filter(c => c !== 'All');
+        editMovieCategorySelect.innerHTML = filteredCats.map(c => `<option value="${c}">${c}</option>`).join('');
+        editMovieCategorySelect.value = movie.category || this.categories[1] || 'Amateur';
+    }
+    document.getElementById('editMovieThumbnail').value = movie.thumbnail || '';
+
+    const modal = document.getElementById('editMovieModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  saveMovieEdit(updatedData) {
+    db.collection('movies').doc(updatedData.id).update(updatedData)
+      .then(() => {
+        closeEditMovieModal();
+        alert('Movie updated successfully in Global Database!');
+      })
+      .catch(error => {
+        alert('Error updating movie: ' + error.message);
+      });
+  }
+
+  deleteMovie(movieId) {
+    if (confirm('Are you sure you want to delete this movie from the Global Database?')) {
+      db.collection('movies').doc(movieId).delete().then(() => {
+        alert('Movie deleted.');
+      }).catch(err => {
+        alert('Error deleting movie: ' + err.message);
       });
     }
   }
@@ -628,6 +747,81 @@ function handlePublishVideo(e) {
   document.getElementById('addDescription').value = '';
 }
 
+function updateAddMoviePreview() {
+  const rawUrl = document.getElementById('addMovieStreamtapeUrl').value.trim();
+  const title = document.getElementById('addMovieTitle').value.trim() || 'Movie Title Preview';
+  let thumb = document.getElementById('addMovieThumbnail').value.trim();
+  thumb = formatThumbnailUrl(thumb) || './assets/Thumbnail.png';
+  
+  const titleEl = document.getElementById('previewMovieTitleText');
+  const thumbEl = document.getElementById('previewMovieThumbImg');
+  const frameContainer = document.getElementById('previewMovieEmbedFrame');
+
+  if (titleEl) titleEl.textContent = title;
+
+  if (rawUrl) {
+    const embedUrl = adminApp.parseStreamtapeUrl(rawUrl);
+    if (frameContainer) {
+      frameContainer.innerHTML = `
+        <iframe src="${embedUrl}" width="100%" height="100%" allowfullscreen scrolling="no" frameborder="0"></iframe>
+      `;
+    }
+  } else {
+    if (frameContainer) {
+      frameContainer.innerHTML = `
+        <img id="previewMovieThumbImg" src="${thumb}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div class="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-play ml-0.5"></i>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+function handlePublishMovie(e) {
+  e.preventDefault();
+  const title = document.getElementById('addMovieTitle').value.trim();
+  const rawStreamtapeUrl = document.getElementById('addMovieStreamtapeUrl').value.trim();
+  const categorySelect = document.getElementById('addMovieCategorySelect');
+  const category = categorySelect ? categorySelect.value : 'Amateur';
+  const durationInput = document.getElementById('addMovieDuration');
+  const duration = durationInput && durationInput.value.trim() !== '' ? durationInput.value.trim() : '120:00 Mins';
+  let thumbnail = document.getElementById('addMovieThumbnail').value.trim();
+  thumbnail = formatThumbnailUrl(thumbnail) || './assets/Thumbnail.png';
+  const description = document.getElementById('addMovieDescription').value.trim();
+
+  // Smart Streamtape Parser
+  const parsedStreamtapeUrl = adminApp.parseStreamtapeUrl(rawStreamtapeUrl);
+
+  const newMovie = {
+    id: 'movie-' + Date.now(),
+    title: title,
+    uploader: 'Redroom Admin',
+    uploaderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    views: '1',
+    viewCount: 1,
+    duration: duration,
+    rating: 100,
+    category: category,
+    quality: 'HD',
+    thumbnail: thumbnail,
+    streamtapeUrl: parsedStreamtapeUrl,
+    description: description || 'Streamtape movie uploaded via Admin Panel.',
+    uploadDate: 'Just now',
+    likes: 1,
+    dislikes: 0
+  };
+
+  adminApp.addMovie(newMovie);
+  document.getElementById('addMovieStreamtapeUrl').value = '';
+  document.getElementById('addMovieTitle').value = '';
+  if (durationInput) durationInput.value = '';
+  document.getElementById('addMovieThumbnail').value = '';
+  document.getElementById('addMovieDescription').value = '';
+}
+
 function handleAddCategory(e) {
   e.preventDefault();
   const input = document.getElementById('newCategoryInput');
@@ -659,6 +853,25 @@ function handleSaveEdit(e) {
     thumbnail: formatThumbnailUrl(document.getElementById('editThumbnail').value.trim())
   };
   adminApp.saveEdit(updated);
+}
+
+function closeEditMovieModal() {
+  const modal = document.getElementById('editMovieModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleSaveMovieEdit(e) {
+  e.preventDefault();
+  const id = document.getElementById('editMovieId').value;
+  const rawUrl = document.getElementById('editMovieStreamtapeUrl').value.trim();
+  const updated = {
+    id: id,
+    title: document.getElementById('editMovieTitle').value.trim(),
+    category: document.getElementById('editMovieCategorySelect').value,
+    streamtapeUrl: adminApp.parseStreamtapeUrl(rawUrl),
+    thumbnail: formatThumbnailUrl(document.getElementById('editMovieThumbnail').value.trim())
+  };
+  adminApp.saveMovieEdit(updated);
 }
 
 // ================================

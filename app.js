@@ -21,6 +21,7 @@ class RedroomApp {
   constructor() {
     this.videos = [];
     this.playlists = [];
+    this.movies = []; // Added movies
     this.categories = [...DEFAULT_CATEGORIES];
     this.siteViews = this.loadSiteViews();
     this.currentCategory = 'All';
@@ -29,7 +30,7 @@ class RedroomApp {
     this.activePlaylist = null; // Currently viewing playlist
     this.playlistVideoIndex = 0; // Current index in playlist playback
     this.currentPage = 1;
-    this.itemsPerPage = 20;
+    this.itemsPerPage = 12; // Load 12 videos on home page
     this.currentPlaylistPage = 1;
     this.playlistsPerPage = 5;
     this.init();
@@ -85,6 +86,16 @@ class RedroomApp {
       });
       this.playlists = pls.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       this.renderPlaylists();
+    });
+
+    // Fetch Movies Real-time
+    db.collection('movies').onSnapshot(snapshot => {
+      const mvs = [];
+      snapshot.forEach(doc => {
+        mvs.push({ id: doc.id, ...doc.data() });
+      });
+      this.movies = mvs.sort((a, b) => b.createdAt - a.createdAt);
+      this.renderMoviesSection();
     });
 
     // Sync Global Site Views
@@ -548,7 +559,14 @@ class RedroomApp {
   }
 
   openPlayer(videoId, fromHistory = false) {
-    const video = this.videos.find(v => v.id === videoId);
+    let video = this.videos.find(v => v.id === videoId);
+    let isMovie = false;
+    
+    if (!video) {
+      video = this.movies.find(m => m.id === videoId);
+      if (video) isMovie = true;
+    }
+    
     if (!video) return;
 
     if (!fromHistory) {
@@ -557,6 +575,7 @@ class RedroomApp {
 
     this.showLoader('Opening Full Screen Streamtape Player...');
     this.currentVideo = video;
+    this.currentVideo.isMovie = isMovie;
     const playerModal = document.getElementById('playerModal');
     const iframeContainer = document.getElementById('streamtapeIframeContainer');
     
@@ -568,11 +587,14 @@ class RedroomApp {
           src="${embedUrl}" 
           width="100%" 
           height="100%" 
-          allowfullscreen 
+          allowfullscreen="true" 
+          webkitallowfullscreen="true" 
+          mozallowfullscreen="true"
           scrolling="no" 
           frameborder="0"
           allow="autoplay; encrypted-media; fullscreen"
-          title="${video.title}">
+          title="${video.title}"
+          style="position:absolute; top:0; left:0; width:100%; height:100%;">
         </iframe>
       `;
     }
@@ -694,7 +716,9 @@ class RedroomApp {
     if (!recList || !this.currentVideo) return;
 
     let recommended;
-    if (this.activePlaylist) {
+    if (this.currentVideo && this.currentVideo.isMovie) {
+       recommended = this.movies.filter(v => v.id !== this.currentVideo.id).slice(0, 4);
+    } else if (this.activePlaylist) {
       // In playlist mode: show next videos in the playlist
       const plVids = (this.activePlaylist.videoIds || [])
         .map(id => this.videos.find(v => v.id === id))
@@ -1010,6 +1034,115 @@ class RedroomApp {
 
   closeAllVideos() {
     const modal = document.getElementById('allVideosModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+  }
+
+  // ==============================
+  // MOVIES SECTION METHODS
+  // ==============================
+
+  renderMoviesSection() {
+    const section = document.getElementById('moviesSection');
+    const container = document.getElementById('moviesCardsRow');
+    const countEl = document.getElementById('moviesTotalCount');
+    if (!section || !container) return;
+
+    if (this.movies.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    // Only show movies section if not searching and current category is All
+    if (this.searchQuery || this.currentCategory !== 'All' || this.activePlaylist) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    if (countEl) countEl.textContent = `${this.movies.length} movie${this.movies.length !== 1 ? 's' : ''}`;
+
+    const limit = 12; // Load up to 12 movies on home page
+    const displayMovies = this.movies.slice(0, limit);
+
+    container.innerHTML = displayMovies.map(mv => `
+      <div class="flex-shrink-0 w-36 sm:w-48 cursor-pointer group flex flex-col" onclick="window.app.openPlayer('${mv.id}')">
+        <div class="relative aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg group-hover:shadow-rose-600/20">
+          <img src="${mv.thumbnail}" alt="${mv.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='./assets/Thumbnail.png'">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+          
+          <div class="absolute bottom-2 left-2 right-2 flex justify-between items-end">
+            <span class="text-white text-[10px] sm:text-xs font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-md flex items-center gap-1 w-fit border border-rose-400">
+              <i class="fa-solid fa-star text-yellow-400 text-[8px] sm:text-[10px]"></i> ${mv.rating || '90%'}
+            </span>
+            <span class="text-white text-[9px] sm:text-[10px] font-semibold bg-black/80 px-1.5 py-0.5 rounded border border-white/20">
+              ${mv.duration || '1:30:00'}
+            </span>
+          </div>
+          
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg border border-rose-400 transform group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-play text-sm sm:text-base ml-1"></i>
+            </div>
+          </div>
+        </div>
+        <h3 class="mt-2 text-xs sm:text-sm font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${mv.title}</h3>
+        <p class="text-[9px] sm:text-[11px] dark:text-gray-400 text-slate-500 truncate mt-0.5">${mv.category || 'Movie'} • ${(mv.viewCount || mv.views || 0).toLocaleString()} views</p>
+      </div>
+    `).join('');
+  }
+
+  openAllMovies() {
+    const modal = document.getElementById('allMoviesModal');
+    const grid = document.getElementById('allMoviesGrid');
+    const countEl = document.getElementById('allMoviesCount');
+    if (!modal || !grid) return;
+
+    if (countEl) countEl.textContent = `(${this.movies.length})`;
+
+    grid.innerHTML = this.movies.map(mv => `
+      <div class="cursor-pointer group flex flex-col h-full" onclick="window.app.closeAllMovies(); window.app.openPlayer('${mv.id}')">
+        <div class="relative aspect-[2/3] rounded-xl overflow-hidden bg-black/80 border border-white/10 group-hover:border-rose-500/50 transition-all shadow-lg w-full">
+          <img src="${mv.thumbnail}" alt="${mv.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.src='./assets/Thumbnail.png'">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+          
+          <div class="absolute top-1.5 left-1.5 bg-red-950/80 backdrop-blur-md border border-rose-500/30 text-rose-400 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+            ${mv.category || 'Movie'}
+          </div>
+          ${this.isNewVideo(mv.createdAt) ? `
+          <div class="absolute top-1.5 right-1.5 bg-rose-600/90 backdrop-blur-md border border-rose-400 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg">
+            NEW
+          </div>
+          ` : ''}
+          
+          <div class="absolute bottom-1.5 left-1.5 right-1.5 flex justify-between items-end">
+            <span class="text-white text-[9px] font-bold bg-rose-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1 border border-rose-400">
+              <i class="fa-solid fa-star text-yellow-400 text-[8px]"></i> ${mv.rating || '90%'}
+            </span>
+            <span class="text-white text-[9px] font-semibold bg-black/80 px-1.5 py-0.5 rounded border border-white/20">
+              ${mv.duration || '1:30:00'}
+            </span>
+          </div>
+
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="w-10 h-10 rounded-full bg-rose-600/90 border border-rose-400 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+              <i class="fa-solid fa-play text-sm ml-0.5"></i>
+            </div>
+          </div>
+        </div>
+        <h3 class="mt-1.5 text-[11px] sm:text-xs font-bold dark:text-gray-100 text-slate-800 group-hover:text-rose-500 transition-colors line-clamp-2 leading-snug">${mv.title}</h3>
+        <span class="text-[9px] dark:text-gray-400 text-slate-500">${(mv.viewCount || mv.views || 0).toLocaleString()} views • ${this.formatTimeAgo(mv.createdAt, mv.uploadDate)}</span>
+      </div>
+    `).join('');
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAllMovies() {
+    const modal = document.getElementById('allMoviesModal');
     if (modal) {
       modal.classList.add('hidden');
       document.body.style.overflow = 'auto';
