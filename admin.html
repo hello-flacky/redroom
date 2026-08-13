@@ -507,11 +507,15 @@
                   required class="admin-input">
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">Select Category</label>
-                <select id="addMovieCategorySelect" class="admin-input">
-                  <!-- Dynamically populated by admin.js -->
-                </select>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Language</label>
+                  <input type="text" id="addMovieLanguage" placeholder="e.g. English" class="admin-input">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Release Year</label>
+                  <input type="text" id="addMovieYear" placeholder="e.g. 2024" class="admin-input">
+                </div>
               </div>
 
               <div>
@@ -824,11 +828,15 @@
           <input type="text" id="editMovieTitle" required class="admin-input">
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">Category</label>
-          <select id="editMovieCategorySelect" class="admin-input">
-            <!-- Dynamically populated by admin.js -->
-          </select>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Language</label>
+            <input type="text" id="editMovieLanguage" class="admin-input">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Release Year</label>
+            <input type="text" id="editMovieYear" class="admin-input">
+          </div>
         </div>
 
         <div>

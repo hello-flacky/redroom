@@ -448,14 +448,11 @@ class RedroomAdmin {
     document.getElementById('editMovieTitle').value = movie.title;
     document.getElementById('editMovieStreamtapeUrl').value = movie.streamtapeUrl;
     
-    // Check if editMovieCategorySelect exists, in case the modal wasn't updated yet.
-    const editMovieCategorySelect = document.getElementById('editMovieCategorySelect');
-    if (editMovieCategorySelect) {
-        // Need to populate it with categories first since we might have just switched to this view
-        const filteredCats = this.categories.filter(c => c !== 'All');
-        editMovieCategorySelect.innerHTML = filteredCats.map(c => `<option value="${c}">${c}</option>`).join('');
-        editMovieCategorySelect.value = movie.category || this.categories[1] || 'Amateur';
-    }
+    // Populate Year and Language
+    const editMovieYear = document.getElementById('editMovieYear');
+    if (editMovieYear) editMovieYear.value = movie.year || '';
+    const editMovieLanguage = document.getElementById('editMovieLanguage');
+    if (editMovieLanguage) editMovieLanguage.value = movie.language || '';
     document.getElementById('editMovieThumbnail').value = movie.thumbnail || '';
 
     const modal = document.getElementById('editMovieModal');
@@ -784,13 +781,16 @@ function handlePublishMovie(e) {
   e.preventDefault();
   const title = document.getElementById('addMovieTitle').value.trim();
   const rawStreamtapeUrl = document.getElementById('addMovieStreamtapeUrl').value.trim();
-  const categorySelect = document.getElementById('addMovieCategorySelect');
-  const category = categorySelect ? categorySelect.value : 'Amateur';
   const durationInput = document.getElementById('addMovieDuration');
   const duration = durationInput && durationInput.value.trim() !== '' ? durationInput.value.trim() : '120:00 Mins';
   let thumbnail = document.getElementById('addMovieThumbnail').value.trim();
   thumbnail = formatThumbnailUrl(thumbnail) || './assets/Thumbnail.png';
   const description = document.getElementById('addMovieDescription').value.trim();
+
+  const languageInput = document.getElementById('addMovieLanguage');
+  const language = languageInput ? languageInput.value.trim() : '';
+  const yearInput = document.getElementById('addMovieYear');
+  const year = yearInput ? yearInput.value.trim() : '';
 
   // Smart Streamtape Parser
   const parsedStreamtapeUrl = adminApp.parseStreamtapeUrl(rawStreamtapeUrl);
@@ -804,7 +804,9 @@ function handlePublishMovie(e) {
     viewCount: 1,
     duration: duration,
     rating: 100,
-    category: category,
+    category: 'Movie',
+    language: language,
+    year: year,
     quality: 'HD',
     thumbnail: thumbnail,
     streamtapeUrl: parsedStreamtapeUrl,
@@ -818,6 +820,8 @@ function handlePublishMovie(e) {
   document.getElementById('addMovieStreamtapeUrl').value = '';
   document.getElementById('addMovieTitle').value = '';
   if (durationInput) durationInput.value = '';
+  if (languageInput) languageInput.value = '';
+  if (yearInput) yearInput.value = '';
   document.getElementById('addMovieThumbnail').value = '';
   document.getElementById('addMovieDescription').value = '';
 }
@@ -864,10 +868,15 @@ function handleSaveMovieEdit(e) {
   e.preventDefault();
   const id = document.getElementById('editMovieId').value;
   const rawUrl = document.getElementById('editMovieStreamtapeUrl').value.trim();
+  const editLanguage = document.getElementById('editMovieLanguage');
+  const editYear = document.getElementById('editMovieYear');
+  
   const updated = {
     id: id,
     title: document.getElementById('editMovieTitle').value.trim(),
-    category: document.getElementById('editMovieCategorySelect').value,
+    category: 'Movie',
+    language: editLanguage ? editLanguage.value.trim() : '',
+    year: editYear ? editYear.value.trim() : '',
     streamtapeUrl: adminApp.parseStreamtapeUrl(rawUrl),
     thumbnail: formatThumbnailUrl(document.getElementById('editMovieThumbnail').value.trim())
   };

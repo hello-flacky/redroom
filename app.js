@@ -600,14 +600,34 @@ class RedroomApp {
     }
 
     document.getElementById('playerTitle').textContent = video.title;
-    document.getElementById('playerUploader').textContent = video.uploader;
-    document.getElementById('playerUploaderAvatar').src = video.uploaderAvatar;
-    document.getElementById('playerViews').textContent = (video.viewCount || video.views || 0).toLocaleString() + ' Views';
-    document.getElementById('playerUploadDate').textContent = this.formatTimeAgo(video.createdAt, video.uploadDate);
-    document.getElementById('playerCategory').textContent = video.category || 'General';
-    document.getElementById('playerDescription').textContent = video.description || 'Exclusive Redroom video stream.';
-    document.getElementById('playerLikeCount').textContent = (video.likes || 0).toLocaleString();
-    document.getElementById('playerDislikeCount').textContent = (video.dislikes || 0).toLocaleString();
+    
+    const videoPlayerDetails = document.getElementById('videoPlayerDetails');
+    const videoPlayerDescription = document.getElementById('videoPlayerDescription');
+    const moviePlayerDetails = document.getElementById('moviePlayerDetails');
+
+    if (isMovie) {
+      if (videoPlayerDetails) videoPlayerDetails.classList.add('hidden');
+      if (videoPlayerDescription) videoPlayerDescription.classList.add('hidden');
+      if (moviePlayerDetails) moviePlayerDetails.classList.remove('hidden');
+      
+      document.getElementById('moviePlayerTitle').textContent = video.title;
+      document.getElementById('moviePlayerYear').textContent = video.year || 'Unknown';
+      document.getElementById('moviePlayerLanguage').textContent = video.language || 'Unknown';
+      document.getElementById('moviePlayerDescription').textContent = video.description || 'Exclusive Redroom movie stream.';
+    } else {
+      if (videoPlayerDetails) videoPlayerDetails.classList.remove('hidden');
+      if (videoPlayerDescription) videoPlayerDescription.classList.remove('hidden');
+      if (moviePlayerDetails) moviePlayerDetails.classList.add('hidden');
+
+      document.getElementById('playerUploader').textContent = video.uploader;
+      document.getElementById('playerUploaderAvatar').src = video.uploaderAvatar;
+      document.getElementById('playerViews').textContent = (video.viewCount || video.views || 0).toLocaleString() + ' Views';
+      document.getElementById('playerUploadDate').textContent = this.formatTimeAgo(video.createdAt, video.uploadDate);
+      document.getElementById('playerCategory').textContent = video.category || 'General';
+      document.getElementById('playerDescription').textContent = video.description || 'Exclusive Redroom video stream.';
+      document.getElementById('playerLikeCount').textContent = (video.likes || 0).toLocaleString();
+      document.getElementById('playerDislikeCount').textContent = (video.dislikes || 0).toLocaleString();
+    }
 
     this.renderRecommendedList();
     this.incrementSiteViews();
@@ -631,6 +651,17 @@ class RedroomApp {
   }
 
   closePlayer(fromHistory = false) {
+    // Exit native fullscreen if active (Fixes mobile fullscreen bug on next open)
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.log(err));
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      }
+    }
+
     const playerModal = document.getElementById('playerModal');
     const iframeContainer = document.getElementById('streamtapeIframeContainer');
     if (iframeContainer) iframeContainer.innerHTML = '';
